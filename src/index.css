@@ -3,9 +3,29 @@
 @tailwind utilities;
 
 @layer base {
-  body {
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
+  html, body {
     @apply bg-slate-950 text-slate-100 antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Safe area padding utilities for iOS iPhone Notch, Dynamic Island, and Home bar */
+  .safe-area-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  .safe-area-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 
   /* Modern Web Guidance for modal dialogs and backdrop overscroll */
@@ -16,7 +36,8 @@
     overflow: hidden;
     overscroll-behavior: contain;
     background: rgba(4, 11, 20, 0.85);
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 }
 

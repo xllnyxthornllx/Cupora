@@ -430,7 +430,7 @@ export const PassengerView: React.FC<PassengerViewProps> = ({
             </div>
 
             {/* Step 4: Payment & Passenger Info with Real QR */}
-            <div className="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-xl space-y-5">
+            <div id="payment-form-section" className="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-xl space-y-5 scroll-mt-20">
               <div className="border-b border-slate-800 pb-3 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
@@ -589,6 +589,32 @@ export const PassengerView: React.FC<PassengerViewProps> = ({
               </form>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Mobile Floating Seat Selected Bottom Action Bar (Android & iOS) */}
+      {selectedSeat && (
+        <div className="lg:hidden fixed bottom-16 inset-x-0 z-40 bg-teal-950/95 border-t border-teal-500/50 px-4 py-3 shadow-2xl backdrop-blur-xl flex items-center justify-between animate-in slide-in-from-bottom-4 safe-area-bottom">
+          <div className="flex items-center gap-2.5">
+            <span className="w-8 h-8 rounded-xl bg-teal-400 text-slate-950 font-black font-mono flex items-center justify-center text-xs shadow-md">
+              #{selectedSeat.number.toString().padStart(2, '0')}
+            </span>
+            <div>
+              <span className="text-xs font-bold text-white block leading-tight">Asiento Elegido</span>
+              <span className="text-[11px] font-mono text-teal-300 font-extrabold">Total: S/. {selectedSeat.price.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              document.getElementById('payment-form-section')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+            className="py-2 px-4 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-500 text-slate-950 font-black text-xs shadow-lg shadow-teal-500/30 flex items-center gap-1.5 active:scale-95 transition-all"
+          >
+            <span>Ir a Pagar</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
 

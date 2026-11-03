@@ -62,7 +62,7 @@ export const RefundModal: React.FC<RefundModalProps> = ({
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="p-0 bg-transparent max-w-md w-full rounded-3xl backdrop:bg-slate-950/80 backdrop:backdrop-blur-md shadow-2xl m-auto"
+      className="p-0 bg-transparent w-[calc(100%-2rem)] max-w-md rounded-3xl backdrop:bg-slate-950/80 backdrop:backdrop-blur-md shadow-2xl m-auto"
       aria-labelledby="refund-title"
     >
       <div className="bg-slate-900 border border-slate-700/80 rounded-3xl overflow-hidden text-slate-100 shadow-2xl p-6 relative">

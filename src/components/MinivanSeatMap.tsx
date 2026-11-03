@@ -11,63 +11,63 @@ interface MinivanSeatMapProps {
   model: MinivanModel
 }
 
-// Visual dimensions specification for each scale option
+// Visual dimensions specification with mobile-first responsive scaling
 const SCALE_CONFIG = {
   sm: {
-    containerHeight: 'h-[580px]',
-    seatSize: 'w-12 h-12', // 48px
+    containerHeight: 'h-[500px] sm:h-[580px]',
+    seatSize: 'w-10 h-10 sm:w-12 sm:h-12', // 40px mobile, 48px desktop
     seatRadius: 'rounded-xl',
-    iconSize: 'w-3.5 h-3.5',
-    seatText: 'text-[11px]',
-    priceText: 'text-[8px]',
-    driverSize: 'w-12 h-12',
-    driverWheel: 'w-5 h-5',
-    doorSliding: 'w-13 h-13',
-    doorCab: 'w-11 h-10',
-    doorRear: 'w-24 h-6',
-    luggage: 'w-14 h-9'
+    iconSize: 'w-3 h-3 sm:w-3.5 sm:h-3.5',
+    seatText: 'text-[9px] sm:text-[11px]',
+    priceText: 'text-[7px] sm:text-[8px]',
+    driverSize: 'w-10 h-10 sm:w-12 sm:h-12',
+    driverWheel: 'w-4 h-4 sm:w-5 sm:h-5',
+    doorSliding: 'w-11 h-11 sm:w-13 sm:h-13',
+    doorCab: 'w-9 h-8 sm:w-11 sm:h-10',
+    doorRear: 'w-20 h-5 sm:w-24 sm:h-6',
+    luggage: 'w-12 h-7 sm:w-14 sm:h-9'
   },
   md: {
-    containerHeight: 'h-[630px]',
-    seatSize: 'w-14 h-14', // 56px
-    seatRadius: 'rounded-2xl',
-    iconSize: 'w-4 h-4',
-    seatText: 'text-xs font-bold',
-    priceText: 'text-[9px]',
-    driverSize: 'w-14 h-14',
-    driverWheel: 'w-6 h-6',
-    doorSliding: 'w-15 h-15',
-    doorCab: 'w-12 h-11',
-    doorRear: 'w-28 h-7',
-    luggage: 'w-16 h-10'
+    containerHeight: 'h-[530px] sm:h-[630px]',
+    seatSize: 'w-11 h-11 sm:w-14 sm:h-14', // 44px mobile, 56px desktop
+    seatRadius: 'rounded-xl sm:rounded-2xl',
+    iconSize: 'w-3.5 h-3.5 sm:w-4 sm:h-4',
+    seatText: 'text-[10px] sm:text-xs font-bold',
+    priceText: 'text-[7px] sm:text-[9px]',
+    driverSize: 'w-11 h-11 sm:w-14 sm:h-14',
+    driverWheel: 'w-4 h-4 sm:w-6 sm:h-6',
+    doorSliding: 'w-12 h-12 sm:w-15 sm:h-15',
+    doorCab: 'w-10 h-9 sm:w-12 sm:h-11',
+    doorRear: 'w-22 h-6 sm:w-28 sm:h-7',
+    luggage: 'w-13 h-8 sm:w-16 sm:h-10'
   },
-  lg: { // Default / Prime Peruvian Minivan
-    containerHeight: 'h-[680px]',
-    seatSize: 'w-[66px] h-[66px]', // 66px spacious & prominent
-    seatRadius: 'rounded-2xl',
-    iconSize: 'w-5 h-5',
-    seatText: 'text-sm font-black',
-    priceText: 'text-[10px] font-bold',
-    driverSize: 'w-[66px] h-[66px]',
-    driverWheel: 'w-7 h-7',
-    doorSliding: 'w-18 h-18',
-    doorCab: 'w-14 h-12',
-    doorRear: 'w-32 h-8',
-    luggage: 'w-20 h-11'
+  lg: { // Default / Prime Peruvian Minivan (Optimized for Mobile & PC)
+    containerHeight: 'h-[560px] sm:h-[680px]',
+    seatSize: 'w-[48px] h-[48px] sm:w-[66px] sm:h-[66px]', // 48px mobile, 66px desktop
+    seatRadius: 'rounded-xl sm:rounded-2xl',
+    iconSize: 'w-4 h-4 sm:w-5 sm:h-5',
+    seatText: 'text-xs sm:text-sm font-black',
+    priceText: 'text-[8px] sm:text-[10px] font-bold',
+    driverSize: 'w-[48px] h-[48px] sm:w-[66px] sm:h-[66px]',
+    driverWheel: 'w-5 h-5 sm:w-7 sm:h-7',
+    doorSliding: 'w-[50px] h-[50px] sm:w-18 sm:h-18',
+    doorCab: 'w-11 h-9 sm:w-14 sm:h-12',
+    doorRear: 'w-24 h-6 sm:w-32 sm:h-8',
+    luggage: 'w-14 h-8 sm:w-20 sm:h-11'
   },
   xl: { // Extra Grande / High Accessibility
-    containerHeight: 'h-[750px]',
-    seatSize: 'w-[76px] h-[76px]', // 76px extra spacious
-    seatRadius: 'rounded-2xl',
-    iconSize: 'w-6 h-6',
-    seatText: 'text-base font-black',
-    priceText: 'text-xs font-bold',
-    driverSize: 'w-[76px] h-[76px]',
-    driverWheel: 'w-8 h-8',
-    doorSliding: 'w-20 h-20',
-    doorCab: 'w-16 h-14',
-    doorRear: 'w-36 h-9',
-    luggage: 'w-24 h-12'
+    containerHeight: 'h-[600px] sm:h-[750px]',
+    seatSize: 'w-[54px] h-[54px] sm:w-[76px] sm:h-[76px]', // 54px mobile, 76px desktop
+    seatRadius: 'rounded-xl sm:rounded-2xl',
+    iconSize: 'w-4 h-4 sm:w-6 sm:h-6',
+    seatText: 'text-xs sm:text-base font-black',
+    priceText: 'text-[8px] sm:text-xs font-bold',
+    driverSize: 'w-[54px] h-[54px] sm:w-[76px] sm:h-[76px]',
+    driverWheel: 'w-5 h-5 sm:w-8 sm:h-8',
+    doorSliding: 'w-[56px] h-[56px] sm:w-20 sm:h-20',
+    doorCab: 'w-12 h-10 sm:w-16 sm:h-14',
+    doorRear: 'w-26 h-7 sm:w-36 sm:h-9',
+    luggage: 'w-16 h-9 sm:w-24 sm:h-12'
   }
 }
 
@@ -194,7 +194,7 @@ export const MinivanSeatMap: React.FC<MinivanSeatMapProps> = ({
       </div>
 
       {/* Minivan Vehicle Frame Container */}
-      <div className="w-full bg-slate-900/95 rounded-3xl p-3.5 sm:p-5 border-2 border-slate-800 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+      <div className="w-full bg-slate-900/95 rounded-3xl p-2 sm:p-5 border-2 border-slate-800 shadow-2xl relative overflow-hidden backdrop-blur-xl">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-teal-500/80 to-transparent"></div>
 
         {/* Front Windshield Header with Realistic Cabin Hood */}

@@ -447,7 +447,59 @@ export const DriverView: React.FC<DriverViewProps> = ({
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Passenger Cards (Clean Touch UI on Phones) */}
+        <div className="md:hidden space-y-3">
+          {currentTrip.seats.filter(s => s.status !== 'available').length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs">
+              Aún no hay pasajeros registrados en esta unidad.
+            </div>
+          ) : (
+            currentTrip.seats.filter(s => s.status !== 'available').map(seat => (
+              <div key={seat.id} className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 space-y-2.5 shadow-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-9 h-9 rounded-xl bg-teal-500/15 border border-teal-500/40 flex items-center justify-center font-mono font-black text-teal-300 text-xs shadow-inner">
+                      #{seat.number.toString().padStart(2, '0')}
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-bold text-white leading-tight">
+                        {seat.passengerName || 'Pasajero no registrado'}
+                      </h4>
+                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        DNI: {seat.passengerDni || '-'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-400 font-mono">
+                    S/. {seat.price.toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-900 text-[11px]">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                    seat.status === 'sold_window'
+                      ? 'bg-rose-950/80 text-rose-300 border-rose-800/60'
+                      : 'bg-indigo-950/80 text-indigo-300 border-indigo-800/60'
+                  }`}>
+                    {seat.status === 'sold_window' ? 'Ventanilla' : `App ${seat.paymentMethod?.toUpperCase() || 'YAPE'}`}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setSeatForRefund(seat)}
+                    className="py-1.5 px-3 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-700/60 text-rose-300 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Reembolsar</span>
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300">
             <thead className="bg-slate-950/80 text-slate-400 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-800">
               <tr>

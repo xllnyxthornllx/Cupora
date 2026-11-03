@@ -48,7 +48,7 @@ export const TicketModal: React.FC<TicketModalProps> = ({ ticket, onClose }) => 
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="p-0 bg-transparent max-w-md w-full rounded-3xl backdrop:bg-slate-950/80 backdrop:backdrop-blur-md shadow-2xl open:animate-in open:fade-in open:zoom-in-95 m-auto"
+      className="p-0 bg-transparent w-[calc(100%-2rem)] max-w-md rounded-3xl backdrop:bg-slate-950/80 backdrop:backdrop-blur-md shadow-2xl open:animate-in open:fade-in open:zoom-in-95 m-auto"
       aria-labelledby="ticket-title"
     >
       <div className="bg-slate-900 border border-slate-700/80 rounded-3xl overflow-hidden text-slate-100 shadow-2xl relative">
