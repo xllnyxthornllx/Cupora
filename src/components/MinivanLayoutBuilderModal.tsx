@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { MinivanModel, LayoutCell, CellType, Trip } from '../types'
-import { saveModels, saveTrips, generateInitialSeats, buildDefaultRenaultMasterLayout, buildDefaultSprinterLayout, buildDefaultHiAceLayout } from '../services/storageService'
-import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Minus, Trash2, Check, Sparkles, HelpCircle, Edit3, Grid, Layers, Wand2 } from 'lucide-react'
+import { MinivanModel, FreeformLayoutItem, Trip } from '../types'
+import { saveTrips, generateInitialSeats, buildDefaultRenaultFreeform, buildDefaultSprinterFreeform, buildDefaultHiAceFreeform } from '../services/storageService'
+import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Trash2, Check, Sparkles, HelpCircle, Edit3, Wand2, MousePointer, Move } from 'lucide-react'
 
 interface MinivanLayoutBuilderModalProps {
   isOpen: boolean
@@ -21,18 +21,18 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
   onUpdateTrips
 }) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
   const [modelName, setModelName] = useState<string>(modelToEdit.name)
   const [plate, setPlate] = useState<string>(modelToEdit.plate)
   const [driverName, setDriverName] = useState<string>(modelToEdit.driverName)
   const [defaultPrice, setDefaultPrice] = useState<number>(modelToEdit.defaultPrice)
-  const [rowsCount, setRowsCount] = useState<number>(modelToEdit.rows || 7)
-  const [colsCount, setColsCount] = useState<number>(modelToEdit.cols || 4)
-  const [gridCells, setGridCells] = useState<LayoutCell[]>([])
+  const [elements, setElements] = useState<FreeformLayoutItem[]>([])
 
-  // Tools: 'seat' | 'door' | 'driver' | 'luggage' | 'aisle' | 'edit_number'
-  const [activeTool, setActiveTool] = useState<CellType | 'edit_number'>('seat')
-  const [selectedSeatToEdit, setSelectedSeatToEdit] = useState<{ row: number; col: number; number: number; label: string } | null>(null)
+  // Tools: 'select' (drag/move) | 'add_seat' | 'add_door' | 'add_driver' | 'add_luggage' | 'delete'
+  const [activeTool, setActiveTool] = useState<'select' | 'add_seat' | 'add_door' | 'add_driver' | 'add_luggage' | 'delete'>('add_seat')
+  const [selectedItem, setSelectedItem] = useState<FreeformLayoutItem | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -46,15 +46,13 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       setPlate(modelToEdit.plate)
       setDriverName(modelToEdit.driverName)
       setDefaultPrice(modelToEdit.defaultPrice)
-      setRowsCount(modelToEdit.rows || 7)
-      setColsCount(modelToEdit.cols || 4)
 
-      if (modelToEdit.layoutGrid && modelToEdit.layoutGrid.length > 0) {
-        setGridCells([...modelToEdit.layoutGrid])
+      if (modelToEdit.freeformElements && modelToEdit.freeformElements.length > 0) {
+        setElements([...modelToEdit.freeformElements])
       } else {
-        const initial = buildDefaultRenaultMasterLayout()
-        setGridCells(initial)
+        setElements(buildDefaultRenaultFreeform())
       }
+      setSelectedItem(null)
     } else {
       if (dialog.open) {
         dialog.close()
@@ -64,179 +62,145 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
 
   if (!isOpen) return null
 
-  const getCell = (row: number, col: number): LayoutCell => {
-    const existing = gridCells.find(c => c.row === row && c.col === col)
-    if (existing) return existing
-    return { row, col, type: 'aisle' }
-  }
+  // Handle click on canvas to place element
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canvasRef.current || draggingId) return
 
-  // Stamp clicked cell with active tool
-  const handleCellClick = (row: number, col: number) => {
-    const existing = gridCells.find(c => c.row === row && c.col === col)
+    const rect = canvasRef.current.getBoundingClientRect()
+    const rawX = ((e.clientX - rect.left) / rect.width) * 100
+    const rawY = ((e.clientY - rect.top) / rect.height) * 100
 
-    if (activeTool === 'edit_number') {
-      if (existing && existing.type === 'seat') {
-        setSelectedSeatToEdit({
-          row,
-          col,
-          number: existing.seatNumber || 1,
-          label: existing.label || `Asiento ${existing.seatNumber || 1}`
-        })
+    // Clamp between 8% and 92%
+    const x = Math.round(Math.max(8, Math.min(92, rawX)))
+    const y = Math.round(Math.max(6, Math.min(94, rawY)))
+
+    if (activeTool === 'add_seat') {
+      const currentSeats = elements.filter(el => el.type === 'seat')
+      const nextSeatNum = currentSeats.length + 1
+      const newSeat: FreeformLayoutItem = {
+        id: `seat-${Date.now()}`,
+        type: 'seat',
+        x,
+        y,
+        seatNumber: nextSeatNum,
+        label: `Asiento ${nextSeatNum.toString().padStart(2, '0')}`,
+        price: defaultPrice
       }
-      return
+      setElements(prev => [...prev, newSeat])
+      setSelectedItem(newSeat)
+    } else if (activeTool === 'add_door') {
+      const filtered = elements.filter(el => el.type !== 'door')
+      const newDoor: FreeformLayoutItem = {
+        id: `door-${Date.now()}`,
+        type: 'door',
+        x,
+        y,
+        label: 'Puerta de Subida'
+      }
+      setElements([...filtered, newDoor])
+      setSelectedItem(newDoor)
+    } else if (activeTool === 'add_driver') {
+      const filtered = elements.filter(el => el.type !== 'driver')
+      const newDriver: FreeformLayoutItem = {
+        id: `driver-${Date.now()}`,
+        type: 'driver',
+        x,
+        y,
+        label: 'Chofer'
+      }
+      setElements([...filtered, newDriver])
+      setSelectedItem(newDriver)
+    } else if (activeTool === 'add_luggage') {
+      const newLuggage: FreeformLayoutItem = {
+        id: `luggage-${Date.now()}`,
+        type: 'luggage',
+        x,
+        y,
+        label: 'Maletero'
+      }
+      setElements(prev => [...prev, newLuggage])
+      setSelectedItem(newLuggage)
     }
-
-    setGridCells(prev => {
-      const filtered = prev.filter(c => !(c.row === row && c.col === col))
-
-      if (activeTool === 'seat') {
-        const existingSeats = prev.filter(c => c.type === 'seat' && !(c.row === row && c.col === col))
-        const nextNum = existing?.seatNumber || (existingSeats.length + 1)
-        return [...filtered, {
-          row,
-          col,
-          type: 'seat',
-          seatNumber: nextNum,
-          label: `Asiento ${nextNum.toString().padStart(2, '0')}`
-        }]
-      }
-
-      if (activeTool === 'door') {
-        return [...filtered, { row, col, type: 'door', label: 'Puerta de Subida' }]
-      }
-
-      if (activeTool === 'driver') {
-        const withoutOtherDriver = filtered.filter(c => c.type !== 'driver')
-        return [...withoutOtherDriver, { row, col, type: 'driver', label: 'Chofer' }]
-      }
-
-      if (activeTool === 'luggage') {
-        return [...filtered, { row, col, type: 'luggage', label: 'Maletero' }]
-      }
-
-      // 'aisle' (eraser)
-      return [...filtered, { row, col, type: 'aisle' }]
-    })
   }
 
-  const handleSaveSeatNumber = () => {
-    if (!selectedSeatToEdit) return
-    setGridCells(prev => prev.map(c => {
-      if (c.row === selectedSeatToEdit.row && c.col === selectedSeatToEdit.col) {
-        return {
-          ...c,
-          seatNumber: Number(selectedSeatToEdit.number),
-          label: selectedSeatToEdit.label
-        }
+  // Handle element click / selection / delete
+  const handleElementClick = (e: React.MouseEvent, item: FreeformLayoutItem) => {
+    e.stopPropagation()
+    if (activeTool === 'delete') {
+      setElements(prev => prev.filter(el => el.id !== item.id))
+      if (selectedItem?.id === item.id) setSelectedItem(null)
+    } else {
+      setSelectedItem(item)
+    }
+  }
+
+  // Dragging support
+  const handleMouseDown = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation()
+    setDraggingId(id)
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!draggingId || !canvasRef.current) return
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const rawX = ((e.clientX - rect.left) / rect.width) * 100
+    const rawY = ((e.clientY - rect.top) / rect.height) * 100
+
+    const x = Math.round(Math.max(6, Math.min(94, rawX)))
+    const y = Math.round(Math.max(5, Math.min(95, rawY)))
+
+    setElements(prev => prev.map(el => {
+      if (el.id === draggingId) {
+        return { ...el, x, y }
       }
-      return c
+      return el
     }))
-    setSelectedSeatToEdit(null)
   }
 
-  // Renumber all seats neatly from front to back, left to right
+  const handleMouseUp = () => {
+    setDraggingId(null)
+  }
+
+  // Renumber seats neatly from front (low y) to back (high y), left to right
   const handleAutoRenumber = () => {
-    let seatCounter = 1
-    const sortedGrid = [...gridCells].sort((a, b) => a.row === b.row ? a.col - b.col : a.row - b.row)
-    const updated = sortedGrid.map(cell => {
-      if (cell.type === 'seat') {
-        const num = seatCounter++
-        return {
-          ...cell,
-          seatNumber: num,
-          label: num === 1 || num === 2 ? `0${num} Copiloto` : `${num.toString().padStart(2, '0')} Asiento`
-        }
+    const seats = elements.filter(el => el.type === 'seat')
+    const otherItems = elements.filter(el => el.type !== 'seat')
+
+    // Sort by y, then by x
+    const sortedSeats = [...seats].sort((a, b) => {
+      if (Math.abs(a.y - b.y) > 6) {
+        return a.y - b.y
       }
-      return cell
+      return a.x - b.x
     })
-    setGridCells(updated)
-  }
 
-  // Load Sprinter 19 seats template
-  const loadSprinter19Template = () => {
-    setRowsCount(7)
-    setColsCount(4)
-    const cells: LayoutCell[] = []
-    // Row 0: Chofer (0,0), Pasadizo (0,1), Copiloto 1 (0,2), Copiloto 2 (0,3)
-    cells.push({ row: 0, col: 0, type: 'driver', label: 'Chofer' })
-    cells.push({ row: 0, col: 1, type: 'aisle' })
-    cells.push({ row: 0, col: 2, type: 'seat', seatNumber: 1, label: '01 Copiloto Centro' })
-    cells.push({ row: 0, col: 3, type: 'seat', seatNumber: 2, label: '02 Copiloto Ventana' })
-
-    // Row 1: Asiento 3, 4, Pasadizo, Puerta
-    cells.push({ row: 1, col: 0, type: 'seat', seatNumber: 3, label: '03 Ventana Izq' })
-    cells.push({ row: 1, col: 1, type: 'seat', seatNumber: 4, label: '04 Pasillo' })
-    cells.push({ row: 1, col: 2, type: 'aisle' })
-    cells.push({ row: 1, col: 3, type: 'door', label: 'Puerta de Subida' })
-
-    // Row 2: Asiento 5, 6, Pasadizo, Asiento 7
-    cells.push({ row: 2, col: 0, type: 'seat', seatNumber: 5, label: '05 Ventana Izq' })
-    cells.push({ row: 2, col: 1, type: 'seat', seatNumber: 6, label: '06 Pasillo' })
-    cells.push({ row: 2, col: 2, type: 'aisle' })
-    cells.push({ row: 2, col: 3, type: 'seat', seatNumber: 7, label: '07 Ventana Der' })
-
-    // Row 3: Asiento 8, 9, Pasadizo, Asiento 10
-    cells.push({ row: 3, col: 0, type: 'seat', seatNumber: 8, label: '08 Ventana Izq' })
-    cells.push({ row: 3, col: 1, type: 'seat', seatNumber: 9, label: '09 Pasillo' })
-    cells.push({ row: 3, col: 2, type: 'aisle' })
-    cells.push({ row: 3, col: 3, type: 'seat', seatNumber: 10, label: '10 Ventana Der' })
-
-    // Row 4: Asiento 11, 12, Pasadizo, Asiento 13
-    cells.push({ row: 4, col: 0, type: 'seat', seatNumber: 11, label: '11 Ventana Izq' })
-    cells.push({ row: 4, col: 1, type: 'seat', seatNumber: 12, label: '12 Pasillo' })
-    cells.push({ row: 4, col: 2, type: 'aisle' })
-    cells.push({ row: 4, col: 3, type: 'seat', seatNumber: 13, label: '13 Ventana Der' })
-
-    // Row 5: Asiento 14, 15, Pasadizo, Asiento 16
-    cells.push({ row: 5, col: 0, type: 'seat', seatNumber: 14, label: '14 Ventana Izq' })
-    cells.push({ row: 5, col: 1, type: 'seat', seatNumber: 15, label: '15 Pasillo' })
-    cells.push({ row: 5, col: 2, type: 'aisle' })
-    cells.push({ row: 5, col: 3, type: 'seat', seatNumber: 16, label: '16 Ventana Der' })
-
-    // Row 6 (Fondo): 17, 18, 19, Bodega
-    cells.push({ row: 6, col: 0, type: 'seat', seatNumber: 17, label: '17 Fondo Izq' })
-    cells.push({ row: 6, col: 1, type: 'seat', seatNumber: 18, label: '18 Fondo Centro' })
-    cells.push({ row: 6, col: 2, type: 'seat', seatNumber: 19, label: '19 Fondo Der' })
-    cells.push({ row: 6, col: 3, type: 'luggage', label: 'Bodega' })
-
-    setGridCells(cells)
-  }
-
-  // Clear all cells to empty aisle (100% manual from scratch)
-  const handleClearAll = () => {
-    const empty: LayoutCell[] = []
-    for (let r = 0; r < rowsCount; r++) {
-      for (let c = 0; c < colsCount; c++) {
-        if (r === 0 && c === 0) {
-          empty.push({ row: r, col: c, type: 'driver', label: 'Chofer' })
-        } else if (r === 1 && c === colsCount - 1) {
-          empty.push({ row: r, col: c, type: 'door', label: 'Puerta' })
-        } else {
-          empty.push({ row: r, col: c, type: 'aisle' })
-        }
+    const renumbered = sortedSeats.map((s, idx) => {
+      const num = idx + 1
+      return {
+        ...s,
+        seatNumber: num,
+        label: num <= 2 ? `0${num} Copiloto` : `${num.toString().padStart(2, '0')} Asiento`
       }
+    })
+
+    setElements([...otherItems, ...renumbered])
+  }
+
+  // Clear floor completely
+  const handleClearAll = () => {
+    if (window.confirm('¿Deseas vaciar todo el piso de la minivan para colocar asientos desde cero?')) {
+      setElements([
+        { id: 'drv-01', type: 'driver', x: 22, y: 10, label: 'Chofer' },
+        { id: 'door-01', type: 'door', x: 88, y: 26, label: 'Puerta de Subida' }
+      ])
+      setSelectedItem(null)
     }
-    setGridCells(empty)
   }
 
   const handleSave = () => {
-    let counter = 1
-    const normalizedCells = gridCells.map(c => {
-      if (c.type === 'seat') {
-        const num = c.seatNumber ?? counter++
-        return {
-          ...c,
-          seatNumber: num,
-          label: c.label || `Asiento ${num.toString().padStart(2, '0')}`,
-          price: defaultPrice
-        }
-      }
-      return c
-    })
-
-    const seatCells = normalizedCells.filter(c => c.type === 'seat')
-    const totalSeats = seatCells.length
-    const doorCell = normalizedCells.find(c => c.type === 'door')
+    const seatItems = elements.filter(el => el.type === 'seat')
+    const doorItem = elements.find(el => el.type === 'door')
 
     const updatedModel: MinivanModel = {
       ...modelToEdit,
@@ -244,12 +208,10 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       plate: plate.trim().toUpperCase(),
       driverName: driverName.trim(),
       defaultPrice,
-      rows: rowsCount,
-      cols: colsCount,
-      doorRow: doorCell?.row ?? 1,
-      doorCol: doorCell?.col ?? (colsCount - 1),
-      totalSeats,
-      layoutGrid: normalizedCells
+      totalSeats: seatItems.length,
+      doorRow: doorItem ? Math.round((doorItem.y / 100) * 6) : 1,
+      doorCol: doorItem ? (doorItem.x > 50 ? 3 : 0) : 3,
+      freeformElements: elements
     }
 
     onSaveModel(updatedModel)
@@ -271,28 +233,27 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     onClose()
   }
 
-  const totalSeatsCount = gridCells.filter(c => c.type === 'seat').length
-  const totalAislesCount = gridCells.filter(c => c.type === 'aisle').length
+  const totalSeatsCount = elements.filter(el => el.type === 'seat').length
 
   return (
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="p-0 bg-transparent max-w-3xl w-full rounded-3xl backdrop:bg-slate-950/80 backdrop:backdrop-blur-md shadow-2xl m-auto"
+      className="p-0 bg-transparent max-w-4xl w-full rounded-3xl backdrop:bg-slate-950/80 backdrop:backdrop-blur-md shadow-2xl m-auto"
       aria-labelledby="builder-title"
     >
-      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl overflow-hidden text-slate-100 shadow-2xl p-5 sm:p-6 relative max-h-[92dvh] overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl overflow-hidden text-slate-100 shadow-2xl p-5 sm:p-6 relative max-h-[94dvh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
-              Personalizador Libre de Carrocería
+              Diseñador Libre de Carrocería & Pasadizos
             </span>
             <h3 id="builder-title" className="text-lg font-bold text-white mt-0.5">
-              Configurador Manual de Asientos, Pasadizos y Puerta
+              Lienzo Libre de Asientos y Puerta
             </h3>
             <p className="text-xs text-slate-400">
-              Arma el croquis idéntico al auto real. Deja pasadizos libres donde camina la gente y ubica la puerta y sillas exactamente donde están.
+              Toca o arrastra cualquier silla donde quieras. El espacio vacío entre asientos es automáticamente el pasadizo.
             </p>
           </div>
           <button
@@ -328,7 +289,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </div>
 
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Tarifa (S/.)</label>
+            <label className="block text-slate-300 font-medium mb-1">Tarifa por Asiento (S/.)</label>
             <input
               type="number"
               value={defaultPrice}
@@ -338,45 +299,36 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </div>
         </div>
 
-        {/* Templates and Dimensions */}
-        <div className="mt-4 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-          {/* Quick templates */}
+        {/* Presets Bar */}
+        <div className="mt-4 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-teal-400 font-bold flex items-center gap-1">
               <Wand2 className="w-3.5 h-3.5" />
-              <span>Plantillas:</span>
+              <span>Plantillas Rápidas:</span>
             </span>
 
             <button
               type="button"
-              onClick={() => {
-                setRowsCount(6)
-                setColsCount(4)
-                setGridCells(buildDefaultRenaultMasterLayout())
-              }}
+              onClick={() => setElements(buildDefaultRenaultFreeform())}
               className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
             >
-              Master 15 Asientos
+              Renault Master (17 Asientos)
             </button>
 
             <button
               type="button"
-              onClick={loadSprinter19Template}
+              onClick={() => setElements(buildDefaultSprinterFreeform())}
               className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
             >
-              Sprinter 19 Asientos (Larga)
+              Sprinter Larga (19 Asientos)
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                setRowsCount(5)
-                setColsCount(4)
-                setGridCells(buildDefaultHiAceLayout())
-              }}
+              onClick={() => setElements(buildDefaultHiAceFreeform())}
               className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
             >
-              HiAce 11 Asientos
+              Toyota HiAce (12 Asientos)
             </button>
 
             <button
@@ -384,300 +336,273 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               onClick={handleClearAll}
               className="py-1 px-2.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-[11px] font-bold"
             >
-              Lienzo Vacío (100% a Mano)
+              Vaciar Piso (Colocar a Mano)
             </button>
           </div>
 
-          {/* Grid Size controls */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
-              <span className="text-slate-400 text-[11px]">Filas: {rowsCount}</span>
-              <button
-                type="button"
-                onClick={() => setRowsCount(Math.max(3, rowsCount - 1))}
-                className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold"
-              >
-                -
-              </button>
-              <button
-                type="button"
-                onClick={() => setRowsCount(Math.min(10, rowsCount + 1))}
-                className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold"
-              >
-                +
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
-              <span className="text-slate-400 text-[11px]">Cols: {colsCount}</span>
-              <button
-                type="button"
-                onClick={() => setColsCount(Math.max(3, colsCount - 1))}
-                className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold"
-              >
-                -
-              </button>
-              <button
-                type="button"
-                onClick={() => setColsCount(Math.min(5, colsCount + 1))}
-                className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold"
-              >
-                +
-              </button>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={handleAutoRenumber}
+            className="py-1.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-all"
+          >
+            Renumerar Asientos (1 al {totalSeatsCount})
+          </button>
         </div>
 
-        {/* Free Tool Selector Palette */}
+        {/* Action Tools Palette */}
         <div className="mt-4 space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            Elige una herramienta y toca las casillas de la minivan para colocarla:
+            Herramientas: Haz clic en una herramienta y luego toca el piso del auto:
           </span>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
             <button
               type="button"
-              onClick={() => setActiveTool('seat')}
+              onClick={() => setActiveTool('add_seat')}
               className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'seat'
-                  ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md shadow-teal-500/20 ring-1 ring-teal-400'
+                activeTool === 'add_seat'
+                  ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md ring-1 ring-teal-400'
                   : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               <Armchair className="w-4 h-4 text-teal-400" />
-              <span className="text-[10px]">Poner Asiento</span>
+              <span className="text-[10px]">Tocar = Poner Silla</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTool('door')}
+              onClick={() => setActiveTool('add_door')}
               className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'door'
-                  ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md shadow-teal-500/20 ring-1 ring-teal-400'
+                activeTool === 'add_door'
+                  ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md ring-1 ring-teal-400'
                   : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               <DoorOpen className="w-4 h-4 text-teal-400" />
-              <span className="text-[10px]">Poner Puerta</span>
+              <span className="text-[10px]">Tocar = Poner Puerta</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTool('aisle')}
+              onClick={() => setActiveTool('add_driver')}
               className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'aisle'
-                  ? 'bg-slate-800 border-slate-400 text-white font-bold ring-1 ring-slate-300'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <Minus className="w-4 h-4" />
-              <span className="text-[10px]">Pasadizo / Borrar</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTool('driver')}
-              className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'driver'
-                  ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md shadow-teal-500/20 ring-1 ring-teal-400'
+                activeTool === 'add_driver'
+                  ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md ring-1 ring-teal-400'
                   : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               <div className="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center">
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
               </div>
-              <span className="text-[10px]">Poner Chofer</span>
+              <span className="text-[10px]">Mover Chofer</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTool('luggage')}
+              onClick={() => setActiveTool('add_luggage')}
               className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'luggage'
-                  ? 'bg-amber-950 border-amber-500 text-amber-300 font-bold shadow-md ring-1 ring-amber-400'
+                activeTool === 'add_luggage'
+                  ? 'bg-amber-950 border-amber-500 text-amber-300 font-bold ring-1 ring-amber-400'
                   : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
               <Luggage className="w-4 h-4 text-amber-400" />
-              <span className="text-[10px]">Maletero</span>
+              <span className="text-[10px]">Poner Maletero</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTool('edit_number')}
+              onClick={() => setActiveTool('select')}
               className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'edit_number'
-                  ? 'bg-indigo-950 border-indigo-500 text-indigo-300 font-bold shadow-md ring-1 ring-indigo-400'
+                activeTool === 'select'
+                  ? 'bg-indigo-950 border-indigo-500 text-indigo-300 font-bold ring-1 ring-indigo-400'
                   : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
-              <Edit3 className="w-4 h-4 text-indigo-400" />
-              <span className="text-[10px]">Editar N° Silla</span>
+              <Move className="w-4 h-4 text-indigo-400" />
+              <span className="text-[10px]">Arrastrar Sillas</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTool('delete')}
+              className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
+                activeTool === 'delete'
+                  ? 'bg-rose-950 border-rose-500 text-rose-300 font-bold ring-1 ring-rose-400'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <Trash2 className="w-4 h-4 text-rose-400" />
+              <span className="text-[10px]">Tocar = Borrar</span>
             </button>
           </div>
         </div>
 
-        {/* Seat Number Edit Form */}
-        {selectedSeatToEdit && (
-          <div className="mt-4 p-4 bg-indigo-950/60 border border-indigo-500/50 rounded-2xl space-y-3 animate-in fade-in text-xs">
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-indigo-300">
-                Cambiar Número Manual de este Asiento (Fila {selectedSeatToEdit.row + 1}, Col {selectedSeatToEdit.col + 1})
+        {/* Selected Item Editor Drawer */}
+        {selectedItem && (
+          <div className="mt-3 p-3 bg-slate-950 rounded-2xl border border-teal-500/40 flex items-center justify-between text-xs animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <span className="text-teal-300 font-bold">
+                Elemento Seleccionado: {selectedItem.type.toUpperCase()}
               </span>
-              <button
-                type="button"
-                onClick={() => setSelectedSeatToEdit(null)}
-                className="text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
+
+              {selectedItem.type === 'seat' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">N° Asiento:</span>
+                  <input
+                    type="number"
+                    value={selectedItem.seatNumber || 1}
+                    onChange={e => {
+                      const val = Number(e.target.value)
+                      setElements(prev => prev.map(el => el.id === selectedItem.id ? { ...el, seatNumber: val, label: `Asiento ${val.toString().padStart(2, '0')}` } : el))
+                      setSelectedItem({ ...selectedItem, seatNumber: val })
+                    }}
+                    className="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white font-mono"
+                  />
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-300 mb-1">Número de Asiento (Ej. 1, 2, 7, 15, 19)</label>
-                <input
-                  type="number"
-                  value={selectedSeatToEdit.number}
-                  onChange={e => setSelectedSeatToEdit({ ...selectedSeatToEdit, number: Number(e.target.value) })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-300 mb-1">Etiqueta de Asiento</label>
-                <input
-                  type="text"
-                  value={selectedSeatToEdit.label}
-                  onChange={e => setSelectedSeatToEdit({ ...selectedSeatToEdit, label: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                />
-              </div>
-            </div>
+
             <button
               type="button"
-              onClick={handleSaveSeatNumber}
-              className="py-1.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
+              onClick={() => {
+                setElements(prev => prev.filter(el => el.id !== selectedItem.id))
+                setSelectedItem(null)
+              }}
+              className="py-1 px-3 rounded-lg bg-rose-950 text-rose-300 hover:bg-rose-900 border border-rose-800 text-xs font-bold"
             >
-              Guardar Número
+              Eliminar
             </button>
           </div>
         )}
 
-        {/* Minivan Graphic Layout Canvas with Clear Pasadizos */}
-        <div className="mt-5 p-5 bg-slate-950 rounded-3xl border-2 border-slate-800 relative">
-          <div className="text-center pb-3 mb-3 border-b border-slate-800 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-            <span>Frente (Parabrisas)</span>
-            <div className="flex items-center gap-3">
-              <span className="text-teal-400 font-mono">Total Asientos: {totalSeatsCount}</span>
-              <span className="text-slate-500 font-mono">Pasadizos Libres: {totalAislesCount}</span>
-            </div>
+        {/* Freeform Interactive Vehicle Floor Blueprint */}
+        <div className="mt-5 p-4 bg-slate-950 rounded-3xl border-2 border-slate-800 relative">
+          <div className="text-center pb-2 mb-2 border-b border-slate-800 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+            <span>Frente del Vehículo (Parabrisas)</span>
+            <span className="text-teal-400 font-mono">Total Asientos: {totalSeatsCount}</span>
           </div>
 
-          <div className="space-y-2.5 max-w-md mx-auto">
-            {Array.from({ length: rowsCount }).map((_, rIdx) => (
-              <div
-                key={rIdx}
-                className="grid gap-2"
-                style={{ gridTemplateColumns: `repeat(${colsCount}, minmax(0, 1fr))` }}
-              >
-                {Array.from({ length: colsCount }).map((_, cIdx) => {
-                  const cell = getCell(rIdx, cIdx)
-                  const isSeat = cell.type === 'seat'
-                  const isDoor = cell.type === 'door'
-                  const isDriver = cell.type === 'driver'
-                  const isLuggage = cell.type === 'luggage'
-                  const isAisle = cell.type === 'aisle'
+          <div
+            ref={canvasRef}
+            onClick={handleCanvasClick}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            className="relative w-full h-[580px] max-w-md mx-auto bg-slate-950 rounded-2xl border-2 border-dashed border-slate-800 overflow-hidden cursor-crosshair select-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle, rgba(56, 189, 248, 0.15) 1.5px, transparent 1.5px)',
+              backgroundSize: '24px 24px'
+            }}
+          >
+            {/* Guide overlay */}
+            <div className="absolute top-2 inset-x-0 text-center pointer-events-none">
+              <span className="text-[10px] text-slate-600 font-mono">
+                Piso Libre de la Minivan • Haz clic o arrastra para posicionar sillas y puertas
+              </span>
+            </div>
 
-                  return (
-                    <button
-                      key={`${rIdx}-${cIdx}`}
-                      type="button"
-                      onClick={() => handleCellClick(rIdx, cIdx)}
-                      className={`h-14 rounded-2xl flex flex-col items-center justify-center p-1 transition-all border text-xs relative active:scale-95 ${
-                        isSeat
-                          ? 'bg-slate-800 hover:bg-slate-700 border-teal-500/70 text-teal-300 shadow-md shadow-teal-500/10'
-                          : isDoor
-                          ? 'bg-teal-950 border-2 border-dashed border-teal-400 text-teal-300 font-bold animate-pulse'
-                          : isDriver
-                          ? 'bg-slate-900 border-slate-600 text-slate-300'
-                          : isLuggage
-                          ? 'bg-amber-950/40 border-amber-600/40 text-amber-300'
-                          : 'bg-slate-950/60 border border-dashed border-slate-800/80 text-slate-600 hover:border-slate-700'
-                      }`}
-                    >
-                      {isSeat && (
-                        <>
-                          <Armchair className="w-4 h-4 mb-0.5 text-teal-400" />
-                          <span className="font-bold text-[11px] text-white font-mono">
-                            {cell.seatNumber ? `#${cell.seatNumber.toString().padStart(2, '0')}` : 'Asiento'}
-                          </span>
-                        </>
-                      )}
+            {/* Render Draggable / Freeform Elements */}
+            {elements.map(item => {
+              const isSelected = selectedItem?.id === item.id
 
-                      {isDoor && (
-                        <>
-                          <DoorOpen className="w-5 h-5 text-teal-300" />
-                          <span className="text-[8px] font-black uppercase text-teal-300">PUERTA</span>
-                        </>
-                      )}
+              if (item.type === 'driver') {
+                return (
+                  <div
+                    key={item.id}
+                    onClick={e => handleElementClick(e, item)}
+                    onMouseDown={e => handleMouseDown(e, item.id)}
+                    className={`absolute flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-slate-900 border-2 text-slate-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 ${
+                      isSelected ? 'border-teal-400 ring-2 ring-teal-400' : 'border-slate-600'
+                    }`}
+                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                  >
+                    <div className="w-6 h-6 rounded-full border border-slate-400 flex items-center justify-center mb-0.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                    </div>
+                    <span className="text-[8px] font-bold uppercase text-slate-300">Chofer</span>
+                  </div>
+                )
+              }
 
-                      {isDriver && (
-                        <>
-                          <div className="w-5 h-5 rounded-full border border-slate-400 flex items-center justify-center mb-0.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                          </div>
-                          <span className="text-[8px] font-bold uppercase text-slate-400">Chofer</span>
-                        </>
-                      )}
+              if (item.type === 'door') {
+                return (
+                  <div
+                    key={item.id}
+                    onClick={e => handleElementClick(e, item)}
+                    onMouseDown={e => handleMouseDown(e, item.id)}
+                    className={`absolute flex flex-col items-center justify-center w-16 h-14 rounded-2xl bg-teal-950/80 border-2 border-dashed text-teal-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 z-10 ${
+                      isSelected ? 'border-white ring-2 ring-teal-400' : 'border-teal-400'
+                    }`}
+                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                  >
+                    <DoorOpen className="w-5 h-5 text-teal-300 mb-0.5" />
+                    <span className="text-[8px] font-black uppercase text-teal-300">Puerta</span>
+                    <span className="text-[7px] text-teal-400">Subida</span>
+                  </div>
+                )
+              }
 
-                      {isLuggage && (
-                        <>
-                          <Luggage className="w-4 h-4 text-amber-400 mb-0.5" />
-                          <span className="text-[8px] font-semibold text-amber-300">Bodega</span>
-                        </>
-                      )}
+              if (item.type === 'luggage') {
+                return (
+                  <div
+                    key={item.id}
+                    onClick={e => handleElementClick(e, item)}
+                    onMouseDown={e => handleMouseDown(e, item.id)}
+                    className={`absolute flex items-center justify-center w-20 h-10 rounded-xl bg-amber-950/40 border text-amber-300 text-[9px] font-bold gap-1 cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 ${
+                      isSelected ? 'border-amber-300 ring-2 ring-amber-400' : 'border-amber-700/60'
+                    }`}
+                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                  >
+                    <Luggage className="w-3.5 h-3.5" />
+                    <span>Maletero</span>
+                  </div>
+                )
+              }
 
-                      {isAisle && (
-                        <span className="text-[8px] text-slate-600 font-mono tracking-wider uppercase">Pasadizo</span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            ))}
+              // Seat
+              return (
+                <div
+                  key={item.id}
+                  onClick={e => handleElementClick(e, item)}
+                  onMouseDown={e => handleMouseDown(e, item.id)}
+                  className={`absolute w-14 h-14 rounded-2xl flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-shadow -translate-x-1/2 -translate-y-1/2 ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-teal-400 to-emerald-600 text-white border-2 border-white shadow-xl shadow-teal-500/40 ring-2 ring-teal-300 z-20'
+                      : 'bg-slate-800 hover:bg-slate-700 text-teal-300 border-2 border-teal-500/70 shadow-md'
+                  }`}
+                  style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                >
+                  <Armchair className="w-4 h-4 mb-0.5" />
+                  <span className="font-mono font-black text-xs text-white">
+                    #{item.seatNumber?.toString().padStart(2, '0') || '01'}
+                  </span>
+                </div>
+              )
+            })}
           </div>
 
           <div className="text-center pt-3 mt-3 border-t border-slate-800 text-[10px] text-slate-500">
-            Fondo Posterior (Maletero y Fila Trasera)
+            Fondo Posterior (Maletero y Parte Trasera)
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+        <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={handleAutoRenumber}
-            className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 text-xs font-bold border border-teal-500/30"
+            onClick={onClose}
+            className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
           >
-            Renumerar Asientos (1 a {totalSeatsCount})
+            Cancelar
           </button>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
-            >
-              Cancelar
-            </button>
-
-            <button
-              type="button"
-              onClick={handleSave}
-              className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-teal-500/30 cursor-pointer"
-            >
-              <Save className="w-4 h-4" />
-              <span>Guardar Distribución de Minivan</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleSave}
+            className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-teal-500/30 cursor-pointer"
+          >
+            <Save className="w-4 h-4" />
+            <span>Guardar Distribución de Minivan</span>
+          </button>
         </div>
       </div>
     </dialog>

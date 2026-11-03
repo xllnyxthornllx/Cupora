@@ -15,6 +15,16 @@ export interface UserAccount {
   assignedPlate?: string
 }
 
+export interface FreeformLayoutItem {
+  id: string
+  type: 'seat' | 'door' | 'driver' | 'luggage'
+  x: number // percentage 0 - 100 from left
+  y: number // percentage 0 - 100 from top
+  seatNumber?: number
+  label?: string
+  price?: number
+}
+
 export interface LayoutCell {
   row: number
   col: number
@@ -55,6 +65,7 @@ export interface MinivanModel {
   description: string
   defaultPrice: number
   layoutGrid?: LayoutCell[]
+  freeformElements?: FreeformLayoutItem[]
 }
 
 export interface RouteOption {
