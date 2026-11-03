@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react'
 import { MinivanSeatMap } from '../components/MinivanSeatMap'
 import { QRScannerModal } from '../components/QRScannerModal'
 import { RefundModal } from '../components/RefundModal'
+import { MinivanLayoutBuilderModal } from '../components/MinivanLayoutBuilderModal'
 import { Trip, Seat, TicketData, MinivanModel, TripStatus, UserAccount } from '../types'
-import { saveTrips, saveTickets, broadcastChange } from '../services/storageService'
-import { Bus, QrCode, Store, Users, CheckCircle2, AlertCircle, Printer, ArrowRight, ShieldCheck, DollarSign, X, RotateCcw, User, Phone } from 'lucide-react'
+import { saveTrips, saveTickets, saveModels, broadcastChange } from '../services/storageService'
+import { Bus, QrCode, Store, Users, CheckCircle2, AlertCircle, Printer, ArrowRight, ShieldCheck, DollarSign, X, RotateCcw, User, Phone, SlidersHorizontal } from 'lucide-react'
 
 interface DriverViewProps {
   trips: Trip[]
   models: MinivanModel[]
   tickets: TicketData[]
   onUpdateTrips: (newTrips: Trip[]) => void
+  onUpdateModels?: (models: MinivanModel[]) => void
   currentUser: UserAccount | null
   onOpenLogin: () => void
 }
@@ -20,11 +22,13 @@ export const DriverView: React.FC<DriverViewProps> = ({
   models,
   tickets,
   onUpdateTrips,
+  onUpdateModels,
   currentUser,
   onOpenLogin
 }) => {
   const [selectedTripId, setSelectedTripId] = useState<string>(trips[0]?.id || '')
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false)
+  const [isLayoutBuilderOpen, setIsLayoutBuilderOpen] = useState<boolean>(false)
   const [selectedSeatForAction, setSelectedSeatForAction] = useState<Seat | null>(null)
   const [seatForRefund, setSeatForRefund] = useState<Seat | null>(null)
   const [windowBuyerName, setWindowBuyerName] = useState<string>('')
@@ -140,6 +144,15 @@ export const DriverView: React.FC<DriverViewProps> = ({
     setTimeout(() => setScanNotification(null), 5000)
   }
 
+  const handleSaveCustomizedModel = (updatedModel: MinivanModel) => {
+    const updated = models.map(m => m.id === updatedModel.id ? updatedModel : m)
+    saveModels(updated)
+    onUpdateModels?.(updated)
+    setIsLayoutBuilderOpen(false)
+    setScanNotification('Se actualizó la distribución de asientos de tu minivan.')
+    setTimeout(() => setScanNotification(null), 4000)
+  }
+
   const handleStatusChange = (status: TripStatus) => {
     const updatedTrips = trips.map(t => {
       if (t.id === currentTrip.id) {
@@ -181,6 +194,16 @@ export const DriverView: React.FC<DriverViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsLayoutBuilderOpen(true)}
+              className="py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-teal-500/50 text-teal-300 font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md"
+              title="Personaliza las sillas, pasadizos y puerta de tu minivan"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-teal-400" />
+              <span>Modificar Croquis de Mi Auto</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setIsScannerOpen(true)}
@@ -505,6 +528,18 @@ export const DriverView: React.FC<DriverViewProps> = ({
         trip={currentTrip}
         onConfirmRefund={handleProcessRefund}
       />
+
+      {/* Driver Minivan Layout Builder Modal */}
+      {isLayoutBuilderOpen && (
+        <MinivanLayoutBuilderModal
+          isOpen={isLayoutBuilderOpen}
+          onClose={() => setIsLayoutBuilderOpen(false)}
+          modelToEdit={currentModel}
+          onSaveModel={handleSaveCustomizedModel}
+          trips={trips}
+          onUpdateTrips={onUpdateTrips}
+        />
+      )}
     </div>
   )
 }

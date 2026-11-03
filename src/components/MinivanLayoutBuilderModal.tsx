@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { MinivanModel, LayoutCell, CellType, Trip } from '../types'
-import { saveModels, saveTrips, generateInitialSeats } from '../services/storageService'
-import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Minus, Trash2, Check, Sparkles, HelpCircle, Edit3, Grid, Layers } from 'lucide-react'
+import { saveModels, saveTrips, generateInitialSeats, buildDefaultRenaultMasterLayout, buildDefaultSprinterLayout, buildDefaultHiAceLayout } from '../services/storageService'
+import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Minus, Trash2, Check, Sparkles, HelpCircle, Edit3, Grid, Layers, Wand2 } from 'lucide-react'
 
 interface MinivanLayoutBuilderModalProps {
   isOpen: boolean
@@ -26,11 +26,11 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
   const [plate, setPlate] = useState<string>(modelToEdit.plate)
   const [driverName, setDriverName] = useState<string>(modelToEdit.driverName)
   const [defaultPrice, setDefaultPrice] = useState<number>(modelToEdit.defaultPrice)
-  const [rowsCount, setRowsCount] = useState<number>(modelToEdit.rows || 6)
+  const [rowsCount, setRowsCount] = useState<number>(modelToEdit.rows || 7)
   const [colsCount, setColsCount] = useState<number>(modelToEdit.cols || 4)
   const [gridCells, setGridCells] = useState<LayoutCell[]>([])
 
-  // Active Tool for manual stamping: 'seat' | 'door' | 'driver' | 'luggage' | 'aisle' | 'edit_number'
+  // Tools: 'seat' | 'door' | 'driver' | 'luggage' | 'aisle' | 'edit_number'
   const [activeTool, setActiveTool] = useState<CellType | 'edit_number'>('seat')
   const [selectedSeatToEdit, setSelectedSeatToEdit] = useState<{ row: number; col: number; number: number; label: string } | null>(null)
 
@@ -46,24 +46,13 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       setPlate(modelToEdit.plate)
       setDriverName(modelToEdit.driverName)
       setDefaultPrice(modelToEdit.defaultPrice)
-      setRowsCount(modelToEdit.rows || 6)
+      setRowsCount(modelToEdit.rows || 7)
       setColsCount(modelToEdit.cols || 4)
 
       if (modelToEdit.layoutGrid && modelToEdit.layoutGrid.length > 0) {
         setGridCells([...modelToEdit.layoutGrid])
       } else {
-        const initial: LayoutCell[] = []
-        for (let r = 0; r < (modelToEdit.rows || 6); r++) {
-          for (let c = 0; c < (modelToEdit.cols || 4); c++) {
-            if (r === 0 && c === 0) {
-              initial.push({ row: r, col: c, type: 'driver', label: 'Chofer' })
-            } else if (r === 1 && c === (modelToEdit.cols || 4) - 1) {
-              initial.push({ row: r, col: c, type: 'door', label: 'Puerta' })
-            } else {
-              initial.push({ row: r, col: c, type: 'seat', label: `Asiento` })
-            }
-          }
-        }
+        const initial = buildDefaultRenaultMasterLayout()
         setGridCells(initial)
       }
     } else {
@@ -101,7 +90,6 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       const filtered = prev.filter(c => !(c.row === row && c.col === col))
 
       if (activeTool === 'seat') {
-        // Calculate next seat number
         const existingSeats = prev.filter(c => c.type === 'seat' && !(c.row === row && c.col === col))
         const nextNum = existing?.seatNumber || (existingSeats.length + 1)
         return [...filtered, {
@@ -118,7 +106,6 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       }
 
       if (activeTool === 'driver') {
-        // Remove any other driver cell
         const withoutOtherDriver = filtered.filter(c => c.type !== 'driver')
         return [...withoutOtherDriver, { row, col, type: 'driver', label: 'Chofer' }]
       }
@@ -132,7 +119,6 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     })
   }
 
-  // Save specific seat number edit
   const handleSaveSeatNumber = () => {
     if (!selectedSeatToEdit) return
     setGridCells(prev => prev.map(c => {
@@ -148,10 +134,9 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     setSelectedSeatToEdit(null)
   }
 
-  // Renumber all seats neatly from front to back
+  // Renumber all seats neatly from front to back, left to right
   const handleAutoRenumber = () => {
     let seatCounter = 1
-    // Sort by row, then by col
     const sortedGrid = [...gridCells].sort((a, b) => a.row === b.row ? a.col - b.col : a.row - b.row)
     const updated = sortedGrid.map(cell => {
       if (cell.type === 'seat') {
@@ -167,23 +152,74 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     setGridCells(updated)
   }
 
-  // Clear all cells to empty aisle
+  // Load Sprinter 19 seats template
+  const loadSprinter19Template = () => {
+    setRowsCount(7)
+    setColsCount(4)
+    const cells: LayoutCell[] = []
+    // Row 0: Chofer (0,0), Pasadizo (0,1), Copiloto 1 (0,2), Copiloto 2 (0,3)
+    cells.push({ row: 0, col: 0, type: 'driver', label: 'Chofer' })
+    cells.push({ row: 0, col: 1, type: 'aisle' })
+    cells.push({ row: 0, col: 2, type: 'seat', seatNumber: 1, label: '01 Copiloto Centro' })
+    cells.push({ row: 0, col: 3, type: 'seat', seatNumber: 2, label: '02 Copiloto Ventana' })
+
+    // Row 1: Asiento 3, 4, Pasadizo, Puerta
+    cells.push({ row: 1, col: 0, type: 'seat', seatNumber: 3, label: '03 Ventana Izq' })
+    cells.push({ row: 1, col: 1, type: 'seat', seatNumber: 4, label: '04 Pasillo' })
+    cells.push({ row: 1, col: 2, type: 'aisle' })
+    cells.push({ row: 1, col: 3, type: 'door', label: 'Puerta de Subida' })
+
+    // Row 2: Asiento 5, 6, Pasadizo, Asiento 7
+    cells.push({ row: 2, col: 0, type: 'seat', seatNumber: 5, label: '05 Ventana Izq' })
+    cells.push({ row: 2, col: 1, type: 'seat', seatNumber: 6, label: '06 Pasillo' })
+    cells.push({ row: 2, col: 2, type: 'aisle' })
+    cells.push({ row: 2, col: 3, type: 'seat', seatNumber: 7, label: '07 Ventana Der' })
+
+    // Row 3: Asiento 8, 9, Pasadizo, Asiento 10
+    cells.push({ row: 3, col: 0, type: 'seat', seatNumber: 8, label: '08 Ventana Izq' })
+    cells.push({ row: 3, col: 1, type: 'seat', seatNumber: 9, label: '09 Pasillo' })
+    cells.push({ row: 3, col: 2, type: 'aisle' })
+    cells.push({ row: 3, col: 3, type: 'seat', seatNumber: 10, label: '10 Ventana Der' })
+
+    // Row 4: Asiento 11, 12, Pasadizo, Asiento 13
+    cells.push({ row: 4, col: 0, type: 'seat', seatNumber: 11, label: '11 Ventana Izq' })
+    cells.push({ row: 4, col: 1, type: 'seat', seatNumber: 12, label: '12 Pasillo' })
+    cells.push({ row: 4, col: 2, type: 'aisle' })
+    cells.push({ row: 4, col: 3, type: 'seat', seatNumber: 13, label: '13 Ventana Der' })
+
+    // Row 5: Asiento 14, 15, Pasadizo, Asiento 16
+    cells.push({ row: 5, col: 0, type: 'seat', seatNumber: 14, label: '14 Ventana Izq' })
+    cells.push({ row: 5, col: 1, type: 'seat', seatNumber: 15, label: '15 Pasillo' })
+    cells.push({ row: 5, col: 2, type: 'aisle' })
+    cells.push({ row: 5, col: 3, type: 'seat', seatNumber: 16, label: '16 Ventana Der' })
+
+    // Row 6 (Fondo): 17, 18, 19, Bodega
+    cells.push({ row: 6, col: 0, type: 'seat', seatNumber: 17, label: '17 Fondo Izq' })
+    cells.push({ row: 6, col: 1, type: 'seat', seatNumber: 18, label: '18 Fondo Centro' })
+    cells.push({ row: 6, col: 2, type: 'seat', seatNumber: 19, label: '19 Fondo Der' })
+    cells.push({ row: 6, col: 3, type: 'luggage', label: 'Bodega' })
+
+    setGridCells(cells)
+  }
+
+  // Clear all cells to empty aisle (100% manual from scratch)
   const handleClearAll = () => {
-    if (window.confirm('¿Deseas vaciar todo el mapa para colocar los asientos desde cero?')) {
-      const empty: LayoutCell[] = []
-      for (let r = 0; r < rowsCount; r++) {
-        for (let c = 0; c < colsCount; c++) {
+    const empty: LayoutCell[] = []
+    for (let r = 0; r < rowsCount; r++) {
+      for (let c = 0; c < colsCount; c++) {
+        if (r === 0 && c === 0) {
+          empty.push({ row: r, col: c, type: 'driver', label: 'Chofer' })
+        } else if (r === 1 && c === colsCount - 1) {
+          empty.push({ row: r, col: c, type: 'door', label: 'Puerta' })
+        } else {
           empty.push({ row: r, col: c, type: 'aisle' })
         }
       }
-      setGridCells(empty)
     }
+    setGridCells(empty)
   }
 
   const handleSave = () => {
-    const seatCells = gridCells.filter(c => c.type === 'seat')
-    const totalSeats = seatCells.length
-
     let counter = 1
     const normalizedCells = gridCells.map(c => {
       if (c.type === 'seat') {
@@ -198,6 +234,8 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       return c
     })
 
+    const seatCells = normalizedCells.filter(c => c.type === 'seat')
+    const totalSeats = seatCells.length
     const doorCell = normalizedCells.find(c => c.type === 'door')
 
     const updatedModel: MinivanModel = {
@@ -234,12 +272,13 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
   }
 
   const totalSeatsCount = gridCells.filter(c => c.type === 'seat').length
+  const totalAislesCount = gridCells.filter(c => c.type === 'aisle').length
 
   return (
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="p-0 bg-transparent max-w-2xl w-full rounded-3xl backdrop:bg-slate-950/80 backdrop:backdrop-blur-md shadow-2xl m-auto"
+      className="p-0 bg-transparent max-w-3xl w-full rounded-3xl backdrop:bg-slate-950/80 backdrop:backdrop-blur-md shadow-2xl m-auto"
       aria-labelledby="builder-title"
     >
       <div className="bg-slate-900 border border-slate-700/80 rounded-3xl overflow-hidden text-slate-100 shadow-2xl p-5 sm:p-6 relative max-h-[92dvh] overflow-y-auto">
@@ -247,13 +286,13 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
-              Personalizador de Carrocería & Asientos
+              Personalizador Libre de Carrocería
             </span>
             <h3 id="builder-title" className="text-lg font-bold text-white mt-0.5">
-              Editor Manual Libre de Minivan
+              Configurador Manual de Asientos, Pasadizos y Puerta
             </h3>
             <p className="text-xs text-slate-400">
-              Coloca los asientos, la puerta y el volante donde corresponda en este vehículo
+              Arma el croquis idéntico al auto real. Deja pasadizos libres donde camina la gente y ubica la puerta y sillas exactamente donde están.
             </p>
           </div>
           <button
@@ -266,10 +305,10 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </button>
         </div>
 
-        {/* Model Details Inputs */}
+        {/* Inputs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 text-xs">
           <div className="col-span-2">
-            <label className="block text-slate-300 font-medium mb-1">Modelo / Nombre de Minivan</label>
+            <label className="block text-slate-300 font-medium mb-1">Nombre / Modelo de Minivan</label>
             <input
               type="text"
               value={modelName}
@@ -299,11 +338,59 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </div>
         </div>
 
-        {/* Dimensions Controls: Add/Remove Rows and Cols */}
+        {/* Templates and Dimensions */}
         <div className="mt-4 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <span className="text-slate-400 font-medium">Tamaño de Cuadrícula:</span>
-            <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+          {/* Quick templates */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-teal-400 font-bold flex items-center gap-1">
+              <Wand2 className="w-3.5 h-3.5" />
+              <span>Plantillas:</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => {
+                setRowsCount(6)
+                setColsCount(4)
+                setGridCells(buildDefaultRenaultMasterLayout())
+              }}
+              className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
+            >
+              Master 15 Asientos
+            </button>
+
+            <button
+              type="button"
+              onClick={loadSprinter19Template}
+              className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
+            >
+              Sprinter 19 Asientos (Larga)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setRowsCount(5)
+                setColsCount(4)
+                setGridCells(buildDefaultHiAceLayout())
+              }}
+              className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
+            >
+              HiAce 11 Asientos
+            </button>
+
+            <button
+              type="button"
+              onClick={handleClearAll}
+              className="py-1 px-2.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-[11px] font-bold"
+            >
+              Lienzo Vacío (100% a Mano)
+            </button>
+          </div>
+
+          {/* Grid Size controls */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
               <span className="text-slate-400 text-[11px]">Filas: {rowsCount}</span>
               <button
                 type="button"
@@ -314,15 +401,15 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               </button>
               <button
                 type="button"
-                onClick={() => setRowsCount(Math.min(8, rowsCount + 1))}
+                onClick={() => setRowsCount(Math.min(10, rowsCount + 1))}
                 className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold"
               >
                 +
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
-              <span className="text-slate-400 text-[11px]">Columnas: {colsCount}</span>
+            <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+              <span className="text-slate-400 text-[11px]">Cols: {colsCount}</span>
               <button
                 type="button"
                 onClick={() => setColsCount(Math.max(3, colsCount - 1))}
@@ -339,30 +426,12 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               </button>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleAutoRenumber}
-              className="py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 font-bold text-xs transition-colors border border-teal-500/30"
-            >
-              Renumerar (1 a {totalSeatsCount})
-            </button>
-            <button
-              type="button"
-              onClick={handleClearAll}
-              className="py-1.5 px-2.5 rounded-xl bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 text-xs transition-colors border border-slate-700"
-              title="Borrar todo para armar desde cero"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
 
         {/* Free Tool Selector Palette */}
         <div className="mt-4 space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            Selecciona una herramienta y toca las casillas de la minivan:
+            Elige una herramienta y toca las casillas de la minivan para colocarla:
           </span>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
             <button
@@ -389,6 +458,19 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
             >
               <DoorOpen className="w-4 h-4 text-teal-400" />
               <span className="text-[10px]">Poner Puerta</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTool('aisle')}
+              className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
+                activeTool === 'aisle'
+                  ? 'bg-slate-800 border-slate-400 text-white font-bold ring-1 ring-slate-300'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <Minus className="w-4 h-4" />
+              <span className="text-[10px]">Pasadizo / Borrar</span>
             </button>
 
             <button
@@ -421,19 +503,6 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
 
             <button
               type="button"
-              onClick={() => setActiveTool('aisle')}
-              className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'aisle'
-                  ? 'bg-slate-800 border-slate-500 text-white font-bold ring-1 ring-slate-400'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <Minus className="w-4 h-4" />
-              <span className="text-[10px]">Borrar / Pasillo</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => setActiveTool('edit_number')}
               className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
                 activeTool === 'edit_number'
@@ -447,12 +516,12 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </div>
         </div>
 
-        {/* Modal for manual seat number editing */}
+        {/* Seat Number Edit Form */}
         {selectedSeatToEdit && (
           <div className="mt-4 p-4 bg-indigo-950/60 border border-indigo-500/50 rounded-2xl space-y-3 animate-in fade-in text-xs">
             <div className="flex justify-between items-center">
               <span className="font-bold text-indigo-300">
-                Editar Número de Asiento (Fila {selectedSeatToEdit.row + 1}, Columna {selectedSeatToEdit.col + 1})
+                Cambiar Número Manual de este Asiento (Fila {selectedSeatToEdit.row + 1}, Col {selectedSeatToEdit.col + 1})
               </span>
               <button
                 type="button"
@@ -464,7 +533,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-slate-300 mb-1">Número de Asiento (Ej. 1, 2, 7, 15)</label>
+                <label className="block text-slate-300 mb-1">Número de Asiento (Ej. 1, 2, 7, 15, 19)</label>
                 <input
                   type="number"
                   value={selectedSeatToEdit.number}
@@ -473,7 +542,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                 />
               </div>
               <div>
-                <label className="block text-slate-300 mb-1">Etiqueta (Ej. Ventana, Pasillo, Copiloto)</label>
+                <label className="block text-slate-300 mb-1">Etiqueta de Asiento</label>
                 <input
                   type="text"
                   value={selectedSeatToEdit.label}
@@ -492,14 +561,17 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </div>
         )}
 
-        {/* Minivan Graphic Layout Canvas */}
+        {/* Minivan Graphic Layout Canvas with Clear Pasadizos */}
         <div className="mt-5 p-5 bg-slate-950 rounded-3xl border-2 border-slate-800 relative">
           <div className="text-center pb-3 mb-3 border-b border-slate-800 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">
             <span>Frente (Parabrisas)</span>
-            <span className="text-teal-400 font-mono">Total: {totalSeatsCount} Asientos</span>
+            <div className="flex items-center gap-3">
+              <span className="text-teal-400 font-mono">Total Asientos: {totalSeatsCount}</span>
+              <span className="text-slate-500 font-mono">Pasadizos Libres: {totalAislesCount}</span>
+            </div>
           </div>
 
-          <div className="space-y-2.5 max-w-sm mx-auto">
+          <div className="space-y-2.5 max-w-md mx-auto">
             {Array.from({ length: rowsCount }).map((_, rIdx) => (
               <div
                 key={rIdx}
@@ -528,7 +600,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                           ? 'bg-slate-900 border-slate-600 text-slate-300'
                           : isLuggage
                           ? 'bg-amber-950/40 border-amber-600/40 text-amber-300'
-                          : 'bg-slate-950/60 border-slate-800/80 text-slate-600 hover:border-slate-700'
+                          : 'bg-slate-950/60 border border-dashed border-slate-800/80 text-slate-600 hover:border-slate-700'
                       }`}
                     >
                       {isSeat && (
@@ -543,7 +615,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                       {isDoor && (
                         <>
                           <DoorOpen className="w-5 h-5 text-teal-300" />
-                          <span className="text-[8px] font-black uppercase text-teal-300">Puerta</span>
+                          <span className="text-[8px] font-black uppercase text-teal-300">PUERTA</span>
                         </>
                       )}
 
@@ -564,7 +636,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                       )}
 
                       {isAisle && (
-                        <span className="text-[9px] text-slate-700 font-mono">Pasillo</span>
+                        <span className="text-[8px] text-slate-600 font-mono tracking-wider uppercase">Pasadizo</span>
                       )}
                     </button>
                   )
@@ -578,24 +650,34 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-end gap-3">
+        {/* Footer Actions */}
+        <div className="mt-5 pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
           <button
             type="button"
-            onClick={onClose}
-            className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+            onClick={handleAutoRenumber}
+            className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-teal-300 text-xs font-bold border border-teal-500/30"
           >
-            Cancelar
+            Renumerar Asientos (1 a {totalSeatsCount})
           </button>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-teal-500/30 cursor-pointer"
-          >
-            <Save className="w-4 h-4" />
-            <span>Guardar Distribución de Minivan</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSave}
+              className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-teal-500/30 cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Guardar Distribución de Minivan</span>
+            </button>
+          </div>
         </div>
       </div>
     </dialog>

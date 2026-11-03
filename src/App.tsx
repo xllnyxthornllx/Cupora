@@ -149,6 +149,7 @@ export function App() {
             models={models}
             tickets={tickets}
             onUpdateTrips={setTrips}
+            onUpdateModels={setModels}
             currentUser={currentUser}
             onOpenLogin={() => setIsLoginModalOpen(true)}
           />
