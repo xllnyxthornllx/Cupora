@@ -296,7 +296,7 @@ export const DriverView: React.FC<DriverViewProps> = ({
 
       {/* Seat Map & Driver Controls */}
       <div className="grid lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-7 bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-xl">
+        <div className="lg:col-span-7 bg-slate-900/60 border border-slate-800 rounded-2xl sm:rounded-3xl p-2.5 sm:p-6 shadow-xl backdrop-blur-xl">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">

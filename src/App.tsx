@@ -132,7 +132,7 @@ export function App() {
       )}
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-28 md:pb-14">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-6 lg:px-8 pt-4 sm:pt-8 pb-28 md:pb-14">
         {activeTab === 'landing' && <LandingView onNavigate={setActiveTab} />}
         {activeTab === 'passenger' && (
           <PassengerView
