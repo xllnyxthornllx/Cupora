@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { MinivanModel, FreeformLayoutItem, Trip } from '../types'
+import { MinivanModel, FreeformLayoutItem, Trip, DoorType } from '../types'
 import { saveTrips, generateInitialSeats, buildDefaultRenaultFreeform, buildDefaultSprinterFreeform, buildDefaultHiAceFreeform } from '../services/storageService'
-import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Trash2, Check, Sparkles, HelpCircle, Edit3, Wand2, MousePointer, Move } from 'lucide-react'
+import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Trash2, Check, Sparkles, HelpCircle, Edit3, Wand2, MousePointer, Move, AlignJustify } from 'lucide-react'
 
 interface MinivanLayoutBuilderModalProps {
   isOpen: boolean
@@ -29,8 +29,8 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
   const [defaultPrice, setDefaultPrice] = useState<number>(modelToEdit.defaultPrice)
   const [elements, setElements] = useState<FreeformLayoutItem[]>([])
 
-  // Tools: 'select' (drag/move) | 'add_seat' | 'add_door' | 'add_driver' | 'add_luggage' | 'delete'
-  const [activeTool, setActiveTool] = useState<'select' | 'add_seat' | 'add_door' | 'add_driver' | 'add_luggage' | 'delete'>('add_seat')
+  // Tools: 'select' | 'add_seat' | 'door_sliding' | 'door_copilot' | 'door_driver' | 'door_rear' | 'add_driver' | 'delete'
+  const [activeTool, setActiveTool] = useState<'select' | 'add_seat' | 'door_sliding' | 'door_copilot' | 'door_driver' | 'door_rear' | 'add_driver' | 'delete'>('add_seat')
   const [selectedItem, setSelectedItem] = useState<FreeformLayoutItem | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
@@ -62,7 +62,39 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
 
   if (!isOpen) return null
 
-  // Handle click on canvas to place element
+  // Snap magnetic coordinate function
+  const snapCoordinate = (rawX: number, rawY: number) => {
+    // Standard aligned lanes
+    const colLanes = [22, 42, 60, 80]
+    const rowLevels = [10, 26, 41, 56, 71, 86]
+
+    let closestX = rawX
+    let minDiffX = Infinity
+    for (const c of colLanes) {
+      const diff = Math.abs(c - rawX)
+      if (diff < 8 && diff < minDiffX) {
+        minDiffX = diff
+        closestX = c
+      }
+    }
+
+    let closestY = rawY
+    let minDiffY = Infinity
+    for (const r of rowLevels) {
+      const diff = Math.abs(r - rawY)
+      if (diff < 7 && diff < minDiffY) {
+        minDiffY = diff
+        closestY = r
+      }
+    }
+
+    return {
+      x: Math.round(Math.max(8, Math.min(92, closestX))),
+      y: Math.round(Math.max(6, Math.min(94, closestY)))
+    }
+  }
+
+  // Handle click on canvas
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!canvasRef.current || draggingId) return
 
@@ -70,9 +102,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     const rawX = ((e.clientX - rect.left) / rect.width) * 100
     const rawY = ((e.clientY - rect.top) / rect.height) * 100
 
-    // Clamp between 8% and 92%
-    const x = Math.round(Math.max(8, Math.min(92, rawX)))
-    const y = Math.round(Math.max(6, Math.min(94, rawY)))
+    const { x, y } = snapCoordinate(rawX, rawY)
 
     if (activeTool === 'add_seat') {
       const currentSeats = elements.filter(el => el.type === 'seat')
@@ -88,14 +118,51 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       }
       setElements(prev => [...prev, newSeat])
       setSelectedItem(newSeat)
-    } else if (activeTool === 'add_door') {
-      const filtered = elements.filter(el => el.type !== 'door')
+    } else if (activeTool === 'door_sliding') {
+      const filtered = elements.filter(el => !(el.type === 'door' && el.doorType === 'sliding'))
       const newDoor: FreeformLayoutItem = {
-        id: `door-${Date.now()}`,
+        id: `door-sliding-${Date.now()}`,
         type: 'door',
-        x,
-        y,
-        label: 'Puerta de Subida'
+        doorType: 'sliding',
+        x: Math.round(rawX > 50 ? 94 : 6),
+        y: Math.round(rawY),
+        label: 'Puerta Corrediza'
+      }
+      setElements([...filtered, newDoor])
+      setSelectedItem(newDoor)
+    } else if (activeTool === 'door_copilot') {
+      const filtered = elements.filter(el => !(el.type === 'door' && el.doorType === 'front_right'))
+      const newDoor: FreeformLayoutItem = {
+        id: `door-copilot-${Date.now()}`,
+        type: 'door',
+        doorType: 'front_right',
+        x: 94,
+        y: 10,
+        label: 'Puerta Copiloto'
+      }
+      setElements([...filtered, newDoor])
+      setSelectedItem(newDoor)
+    } else if (activeTool === 'door_driver') {
+      const filtered = elements.filter(el => !(el.type === 'door' && el.doorType === 'front_left'))
+      const newDoor: FreeformLayoutItem = {
+        id: `door-driver-${Date.now()}`,
+        type: 'door',
+        doorType: 'front_left',
+        x: 6,
+        y: 10,
+        label: 'Puerta Chofer'
+      }
+      setElements([...filtered, newDoor])
+      setSelectedItem(newDoor)
+    } else if (activeTool === 'door_rear') {
+      const filtered = elements.filter(el => !(el.type === 'door' && el.doorType === 'rear'))
+      const newDoor: FreeformLayoutItem = {
+        id: `door-rear-${Date.now()}`,
+        type: 'door',
+        doorType: 'rear',
+        x: 50,
+        y: 96,
+        label: 'Portón Trasero'
       }
       setElements([...filtered, newDoor])
       setSelectedItem(newDoor)
@@ -104,22 +171,12 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       const newDriver: FreeformLayoutItem = {
         id: `driver-${Date.now()}`,
         type: 'driver',
-        x,
-        y,
+        x: 22,
+        y: 10,
         label: 'Chofer'
       }
       setElements([...filtered, newDriver])
       setSelectedItem(newDriver)
-    } else if (activeTool === 'add_luggage') {
-      const newLuggage: FreeformLayoutItem = {
-        id: `luggage-${Date.now()}`,
-        type: 'luggage',
-        x,
-        y,
-        label: 'Maletero'
-      }
-      setElements(prev => [...prev, newLuggage])
-      setSelectedItem(newLuggage)
     }
   }
 
@@ -134,7 +191,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     }
   }
 
-  // Dragging support
+  // Dragging support with magnetic snapping
   const handleMouseDown = (e: React.MouseEvent, id: string) => {
     e.stopPropagation()
     setDraggingId(id)
@@ -147,8 +204,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     const rawX = ((e.clientX - rect.left) / rect.width) * 100
     const rawY = ((e.clientY - rect.top) / rect.height) * 100
 
-    const x = Math.round(Math.max(6, Math.min(94, rawX)))
-    const y = Math.round(Math.max(5, Math.min(95, rawY)))
+    const { x, y } = snapCoordinate(rawX, rawY)
 
     setElements(prev => prev.map(el => {
       if (el.id === draggingId) {
@@ -162,14 +218,62 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     setDraggingId(null)
   }
 
-  // Renumber seats neatly from front (low y) to back (high y), left to right
+  // Auto Align All Seats cleanly into straight symmetric rows
+  const handleAutoAlignAll = () => {
+    const seats = elements.filter(el => el.type === 'seat')
+    const otherItems = elements.filter(el => el.type !== 'seat')
+
+    // Find distinct Y rows
+    const sortedByY = [...seats].sort((a, b) => a.y - b.y)
+    const rowBuckets: FreeformLayoutItem[][] = []
+
+    sortedByY.forEach(s => {
+      const existingBucket = rowBuckets.find(b => Math.abs(b[0].y - s.y) < 7)
+      if (existingBucket) {
+        existingBucket.push(s)
+      } else {
+        rowBuckets.push([s])
+      }
+    })
+
+    // Align each bucket horizontally
+    const alignedSeats: FreeformLayoutItem[] = []
+    rowBuckets.forEach((bucket, bIdx) => {
+      // Calculate average Y for this row
+      const avgY = Math.round(bucket.reduce((acc, el) => acc + el.y, 0) / bucket.length)
+      bucket.sort((a, b) => a.x - b.x)
+
+      bucket.forEach((seat) => {
+        // Snap X to clean lane
+        const lanes = [19, 39, 61, 81]
+        let nearestX = seat.x
+        let minDiff = Infinity
+        for (const l of lanes) {
+          const diff = Math.abs(l - seat.x)
+          if (diff < minDiff) {
+            minDiff = diff
+            nearestX = l
+          }
+        }
+
+        alignedSeats.push({
+          ...seat,
+          x: nearestX,
+          y: avgY
+        })
+      })
+    })
+
+    setElements([...otherItems, ...alignedSeats])
+  }
+
+  // Renumber seats neatly from front to back, left to right
   const handleAutoRenumber = () => {
     const seats = elements.filter(el => el.type === 'seat')
     const otherItems = elements.filter(el => el.type !== 'seat')
 
-    // Sort by y, then by x
     const sortedSeats = [...seats].sort((a, b) => {
-      if (Math.abs(a.y - b.y) > 6) {
+      if (Math.abs(a.y - b.y) > 7) {
         return a.y - b.y
       }
       return a.x - b.x
@@ -187,20 +291,9 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
     setElements([...otherItems, ...renumbered])
   }
 
-  // Clear floor completely
-  const handleClearAll = () => {
-    if (window.confirm('¿Deseas vaciar todo el piso de la minivan para colocar asientos desde cero?')) {
-      setElements([
-        { id: 'drv-01', type: 'driver', x: 22, y: 10, label: 'Chofer' },
-        { id: 'door-01', type: 'door', x: 88, y: 26, label: 'Puerta de Subida' }
-      ])
-      setSelectedItem(null)
-    }
-  }
-
   const handleSave = () => {
     const seatItems = elements.filter(el => el.type === 'seat')
-    const doorItem = elements.find(el => el.type === 'door')
+    const doorItem = elements.find(el => el.type === 'door' && el.doorType === 'sliding')
 
     const updatedModel: MinivanModel = {
       ...modelToEdit,
@@ -247,13 +340,13 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
-              Diseñador Libre de Carrocería & Pasadizos
+              Personalizador de Carrocería con Alineación Inteligente
             </span>
             <h3 id="builder-title" className="text-lg font-bold text-white mt-0.5">
-              Lienzo Libre de Asientos y Puerta
+              Configurador de Asientos, Pasadizos y 3 Puertas
             </h3>
             <p className="text-xs text-slate-400">
-              Toca o arrastra cualquier silla donde quieras. El espacio vacío entre asientos es automáticamente el pasadizo.
+              Mueve y añade asientos libremente: se alinean automáticamente en filas rectas y parejas para que todo quede ordenado y realista.
             </p>
           </div>
           <button
@@ -289,7 +382,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </div>
 
           <div>
-            <label className="block text-slate-300 font-medium mb-1">Tarifa por Asiento (S/.)</label>
+            <label className="block text-slate-300 font-medium mb-1">Tarifa (S/.)</label>
             <input
               type="number"
               value={defaultPrice}
@@ -299,12 +392,12 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
           </div>
         </div>
 
-        {/* Presets Bar */}
+        {/* Alignment & Templates Bar */}
         <div className="mt-4 p-3 bg-slate-950/80 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-teal-400 font-bold flex items-center gap-1">
               <Wand2 className="w-3.5 h-3.5" />
-              <span>Plantillas Rápidas:</span>
+              <span>Plantillas Base:</span>
             </span>
 
             <button
@@ -312,7 +405,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               onClick={() => setElements(buildDefaultRenaultFreeform())}
               className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
             >
-              Renault Master (17 Asientos)
+              Master 17 (3 Puertas)
             </button>
 
             <button
@@ -320,7 +413,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               onClick={() => setElements(buildDefaultSprinterFreeform())}
               className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
             >
-              Sprinter Larga (19 Asientos)
+              Sprinter 19 Larga
             </button>
 
             <button
@@ -328,33 +421,37 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               onClick={() => setElements(buildDefaultHiAceFreeform())}
               className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
             >
-              Toyota HiAce (12 Asientos)
+              HiAce 12
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAutoAlignAll}
+              className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all"
+              title="Alinea todas las sillas en filas y columnas rectas uniformes"
+            >
+              <AlignJustify className="w-3.5 h-3.5" />
+              <span>Auto-Alinear en Filas Rectas</span>
             </button>
 
             <button
               type="button"
-              onClick={handleClearAll}
-              className="py-1 px-2.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 text-[11px] font-bold"
+              onClick={handleAutoRenumber}
+              className="py-1.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-all"
             >
-              Vaciar Piso (Colocar a Mano)
+              Renumerar (1 a {totalSeatsCount})
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={handleAutoRenumber}
-            className="py-1.5 px-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs shadow-sm transition-all"
-          >
-            Renumerar Asientos (1 al {totalSeatsCount})
-          </button>
         </div>
 
-        {/* Action Tools Palette */}
+        {/* Realistic Door and Tool Selector Palette */}
         <div className="mt-4 space-y-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            Herramientas: Haz clic en una herramienta y luego toca el piso del auto:
+            Herramientas de Colocación (Asientos, Pasadizos y las 3 Puertas):
           </span>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
             <button
               type="button"
               onClick={() => setActiveTool('add_seat')}
@@ -365,20 +462,46 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               }`}
             >
               <Armchair className="w-4 h-4 text-teal-400" />
-              <span className="text-[10px]">Tocar = Poner Silla</span>
+              <span className="text-[9px]">Poner Asiento</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTool('add_door')}
+              onClick={() => setActiveTool('door_sliding')}
               className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'add_door'
+                activeTool === 'door_sliding'
                   ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md ring-1 ring-teal-400'
                   : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
               }`}
             >
-              <DoorOpen className="w-4 h-4 text-teal-400" />
-              <span className="text-[10px]">Tocar = Poner Puerta</span>
+              <DoorOpen className="w-4 h-4 text-teal-300" />
+              <span className="text-[9px]">Puerta Corrediza</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTool('door_copilot')}
+              className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
+                activeTool === 'door_copilot'
+                  ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md ring-1 ring-teal-400'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <DoorOpen className="w-4 h-4 text-sky-400" />
+              <span className="text-[9px]">Puerta Copiloto</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTool('door_driver')}
+              className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
+                activeTool === 'door_driver'
+                  ? 'bg-teal-950 border-teal-500 text-teal-300 font-bold shadow-md ring-1 ring-teal-400'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <DoorOpen className="w-4 h-4 text-emerald-400" />
+              <span className="text-[9px]">Puerta Chofer</span>
             </button>
 
             <button
@@ -393,20 +516,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               <div className="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center">
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
               </div>
-              <span className="text-[10px]">Mover Chofer</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTool('add_luggage')}
-              className={`p-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all ${
-                activeTool === 'add_luggage'
-                  ? 'bg-amber-950 border-amber-500 text-amber-300 font-bold ring-1 ring-amber-400'
-                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-              }`}
-            >
-              <Luggage className="w-4 h-4 text-amber-400" />
-              <span className="text-[10px]">Poner Maletero</span>
+              <span className="text-[9px]">Mover Chofer</span>
             </button>
 
             <button
@@ -419,7 +529,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               }`}
             >
               <Move className="w-4 h-4 text-indigo-400" />
-              <span className="text-[10px]">Arrastrar Sillas</span>
+              <span className="text-[9px]">Arrastrar Sillas</span>
             </button>
 
             <button
@@ -432,54 +542,19 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               }`}
             >
               <Trash2 className="w-4 h-4 text-rose-400" />
-              <span className="text-[10px]">Tocar = Borrar</span>
+              <span className="text-[9px]">Borrar Elemento</span>
             </button>
           </div>
         </div>
 
-        {/* Selected Item Editor Drawer */}
-        {selectedItem && (
-          <div className="mt-3 p-3 bg-slate-950 rounded-2xl border border-teal-500/40 flex items-center justify-between text-xs animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <span className="text-teal-300 font-bold">
-                Elemento Seleccionado: {selectedItem.type.toUpperCase()}
-              </span>
-
-              {selectedItem.type === 'seat' && (
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400">N° Asiento:</span>
-                  <input
-                    type="number"
-                    value={selectedItem.seatNumber || 1}
-                    onChange={e => {
-                      const val = Number(e.target.value)
-                      setElements(prev => prev.map(el => el.id === selectedItem.id ? { ...el, seatNumber: val, label: `Asiento ${val.toString().padStart(2, '0')}` } : el))
-                      setSelectedItem({ ...selectedItem, seatNumber: val })
-                    }}
-                    className="w-16 bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white font-mono"
-                  />
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setElements(prev => prev.filter(el => el.id !== selectedItem.id))
-                setSelectedItem(null)
-              }}
-              className="py-1 px-3 rounded-lg bg-rose-950 text-rose-300 hover:bg-rose-900 border border-rose-800 text-xs font-bold"
-            >
-              Eliminar
-            </button>
-          </div>
-        )}
-
-        {/* Freeform Interactive Vehicle Floor Blueprint */}
+        {/* Canvas Blueprint with Magnetic Visual Row Guides */}
         <div className="mt-5 p-4 bg-slate-950 rounded-3xl border-2 border-slate-800 relative">
           <div className="text-center pb-2 mb-2 border-b border-slate-800 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-            <span>Frente del Vehículo (Parabrisas)</span>
-            <span className="text-teal-400 font-mono">Total Asientos: {totalSeatsCount}</span>
+            <span>Frente (Parabrisas)</span>
+            <div className="flex items-center gap-3">
+              <span className="text-teal-400 font-mono">Total Asientos: {totalSeatsCount}</span>
+              <span className="text-emerald-400 text-[10px]">Alineación Magnética Activa</span>
+            </div>
           </div>
 
           <div
@@ -487,20 +562,29 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
             onClick={handleCanvasClick}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            className="relative w-full h-[580px] max-w-md mx-auto bg-slate-950 rounded-2xl border-2 border-dashed border-slate-800 overflow-hidden cursor-crosshair select-none"
+            className="relative w-full h-[590px] max-w-md mx-auto bg-slate-950 rounded-2xl border-2 border-dashed border-slate-800 overflow-hidden cursor-crosshair select-none"
             style={{
               backgroundImage: 'radial-gradient(circle, rgba(56, 189, 248, 0.15) 1.5px, transparent 1.5px)',
               backgroundSize: '24px 24px'
             }}
           >
-            {/* Guide overlay */}
-            <div className="absolute top-2 inset-x-0 text-center pointer-events-none">
-              <span className="text-[10px] text-slate-600 font-mono">
-                Piso Libre de la Minivan • Haz clic o arrastra para posicionar sillas y puertas
-              </span>
-            </div>
+            {/* Horizontal Row Guide Marks (Fila 1, 2, 3...) */}
+            {[10, 26, 41, 56, 71, 86].map((rowY, idx) => (
+              <div
+                key={rowY}
+                className="absolute inset-x-0 h-px border-t border-dashed border-slate-800/60 pointer-events-none flex justify-between px-2"
+                style={{ top: `${rowY}%` }}
+              >
+                <span className="text-[7px] text-slate-700 font-mono -mt-2">
+                  {idx === 0 ? 'Cabina' : `Fila ${idx}`}
+                </span>
+                <span className="text-[7px] text-slate-700 font-mono -mt-2">
+                  {idx === 0 ? 'Cabina' : `Fila ${idx}`}
+                </span>
+              </div>
+            ))}
 
-            {/* Render Draggable / Freeform Elements */}
+            {/* Render All Elements */}
             {elements.map(item => {
               const isSelected = selectedItem?.id === item.id
 
@@ -510,7 +594,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                     key={item.id}
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
-                    className={`absolute flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-slate-900 border-2 text-slate-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 ${
+                    className={`absolute flex flex-col items-center justify-center w-13 h-13 rounded-2xl bg-slate-900 border-2 text-slate-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 ${
                       isSelected ? 'border-teal-400 ring-2 ring-teal-400' : 'border-slate-600'
                     }`}
                     style={{ left: `${item.x}%`, top: `${item.y}%` }}
@@ -524,19 +608,26 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               }
 
               if (item.type === 'door') {
+                const isSliding = item.doorType === 'sliding'
+                const isCopilot = item.doorType === 'front_right'
+                const isDriverDoor = item.doorType === 'front_left'
+
                 return (
                   <div
                     key={item.id}
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
-                    className={`absolute flex flex-col items-center justify-center w-16 h-14 rounded-2xl bg-teal-950/80 border-2 border-dashed text-teal-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 z-10 ${
-                      isSelected ? 'border-white ring-2 ring-teal-400' : 'border-teal-400'
-                    }`}
+                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 text-teal-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 z-10 ${
+                      isSliding
+                        ? 'w-14 h-14 bg-teal-950/80 border-dashed border-teal-400'
+                        : 'w-12 h-11 bg-slate-900 border-teal-500/60'
+                    } ${isSelected ? 'ring-2 ring-white' : ''}`}
                     style={{ left: `${item.x}%`, top: `${item.y}%` }}
                   >
-                    <DoorOpen className="w-5 h-5 text-teal-300 mb-0.5" />
-                    <span className="text-[8px] font-black uppercase text-teal-300">Puerta</span>
-                    <span className="text-[7px] text-teal-400">Subida</span>
+                    <DoorOpen className="w-4 h-4 text-teal-300 mb-0.5" />
+                    <span className="text-[7px] font-black uppercase text-teal-300">
+                      {isSliding ? 'Corrediza' : isCopilot ? 'Copiloto' : isDriverDoor ? 'Chofer' : 'Portón'}
+                    </span>
                   </div>
                 )
               }
@@ -547,7 +638,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                     key={item.id}
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
-                    className={`absolute flex items-center justify-center w-20 h-10 rounded-xl bg-amber-950/40 border text-amber-300 text-[9px] font-bold gap-1 cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 ${
+                    className={`absolute flex items-center justify-center w-16 h-10 rounded-xl bg-amber-950/40 border text-amber-300 text-[8px] font-bold gap-1 cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 ${
                       isSelected ? 'border-amber-300 ring-2 ring-amber-400' : 'border-amber-700/60'
                     }`}
                     style={{ left: `${item.x}%`, top: `${item.y}%` }}
@@ -564,9 +655,9 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                   key={item.id}
                   onClick={e => handleElementClick(e, item)}
                   onMouseDown={e => handleMouseDown(e, item.id)}
-                  className={`absolute w-14 h-14 rounded-2xl flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-shadow -translate-x-1/2 -translate-y-1/2 ${
+                  className={`absolute w-13 h-13 rounded-2xl flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-all -translate-x-1/2 -translate-y-1/2 ${
                     isSelected
-                      ? 'bg-gradient-to-br from-teal-400 to-emerald-600 text-white border-2 border-white shadow-xl shadow-teal-500/40 ring-2 ring-teal-300 z-20'
+                      ? 'bg-gradient-to-br from-teal-400 to-emerald-600 text-white border-2 border-white shadow-xl shadow-teal-500/40 ring-2 ring-teal-300 z-20 scale-105'
                       : 'bg-slate-800 hover:bg-slate-700 text-teal-300 border-2 border-teal-500/70 shadow-md'
                   }`}
                   style={{ left: `${item.x}%`, top: `${item.y}%` }}

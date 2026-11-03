@@ -109,73 +109,111 @@ export const DEFAULT_ROUTES: RouteOption[] = [
   }
 ]
 
-// Freeform Layouts with True Open Aisles and Exact Coordinates
+// Realistic 3-Door Peruvian Minivan Layouts with Magnetic Row Alignment
 export function buildDefaultRenaultFreeform(): FreeformLayoutItem[] {
   return [
+    // 3 Real Doors of the Minivan:
+    { id: 'door-driver', type: 'door', doorType: 'front_left', x: 6, y: 10, label: 'Puerta Chofer' },
+    { id: 'door-copilot', type: 'door', doorType: 'front_right', x: 94, y: 10, label: 'Puerta Copiloto' },
+    { id: 'door-sliding', type: 'door', doorType: 'sliding', x: 94, y: 26, label: 'Puerta Corrediza' },
+
+    // Front Cabin:
     { id: 'drv-01', type: 'driver', x: 22, y: 10, label: 'Chofer' },
-    { id: 'seat-01', type: 'seat', x: 58, y: 10, seatNumber: 1, label: '01 Copiloto Centro' },
+    { id: 'seat-01', type: 'seat', x: 60, y: 10, seatNumber: 1, label: '01 Copiloto Centro' },
     { id: 'seat-02', type: 'seat', x: 80, y: 10, seatNumber: 2, label: '02 Copiloto Ventana' },
-    { id: 'door-01', type: 'door', x: 88, y: 26, label: 'Puerta de Subida' },
+
+    // Row 1 (Entry row with wide walking space next to sliding door):
     { id: 'seat-03', type: 'seat', x: 22, y: 26, seatNumber: 3, label: '03 Ventana Izq' },
-    { id: 'seat-04', type: 'seat', x: 44, y: 26, seatNumber: 4, label: '04 Pasillo' },
-    { id: 'seat-05', type: 'seat', x: 22, y: 42, seatNumber: 5, label: '05 Ventana Izq' },
-    { id: 'seat-06', type: 'seat', x: 44, y: 42, seatNumber: 6, label: '06 Pasillo' },
-    { id: 'seat-07', type: 'seat', x: 80, y: 42, seatNumber: 7, label: '07 Ventana Der' },
-    { id: 'seat-08', type: 'seat', x: 22, y: 58, seatNumber: 8, label: '08 Ventana Izq' },
-    { id: 'seat-09', type: 'seat', x: 44, y: 58, seatNumber: 9, label: '09 Pasillo' },
-    { id: 'seat-10', type: 'seat', x: 80, y: 58, seatNumber: 10, label: '10 Ventana Der' },
-    { id: 'seat-11', type: 'seat', x: 22, y: 74, seatNumber: 11, label: '11 Ventana Izq' },
-    { id: 'seat-12', type: 'seat', x: 44, y: 74, seatNumber: 12, label: '12 Pasillo' },
-    { id: 'seat-13', type: 'seat', x: 80, y: 74, seatNumber: 13, label: '13 Ventana Der' },
-    { id: 'seat-14', type: 'seat', x: 18, y: 90, seatNumber: 14, label: '14 Fondo Izq' },
-    { id: 'seat-15', type: 'seat', x: 39, y: 90, seatNumber: 15, label: '15 Fondo Centro' },
-    { id: 'seat-16', type: 'seat', x: 61, y: 90, seatNumber: 16, label: '16 Fondo Centro' },
-    { id: 'seat-17', type: 'seat', x: 82, y: 90, seatNumber: 17, label: '17 Fondo Der' }
+    { id: 'seat-04', type: 'seat', x: 42, y: 26, seatNumber: 4, label: '04 Pasillo Izq' },
+
+    // Row 2 (2 seats left, central aisle, 1 seat right):
+    { id: 'seat-05', type: 'seat', x: 22, y: 41, seatNumber: 5, label: '05 Ventana Izq' },
+    { id: 'seat-06', type: 'seat', x: 42, y: 41, seatNumber: 6, label: '06 Pasillo Izq' },
+    { id: 'seat-07', type: 'seat', x: 80, y: 41, seatNumber: 7, label: '07 Ventana Der' },
+
+    // Row 3:
+    { id: 'seat-08', type: 'seat', x: 22, y: 56, seatNumber: 8, label: '08 Ventana Izq' },
+    { id: 'seat-09', type: 'seat', x: 42, y: 56, seatNumber: 9, label: '09 Pasillo Izq' },
+    { id: 'seat-10', type: 'seat', x: 80, y: 56, seatNumber: 10, label: '10 Ventana Der' },
+
+    // Row 4:
+    { id: 'seat-11', type: 'seat', x: 22, y: 71, seatNumber: 11, label: '11 Ventana Izq' },
+    { id: 'seat-12', type: 'seat', x: 42, y: 71, seatNumber: 12, label: '12 Pasillo Izq' },
+    { id: 'seat-13', type: 'seat', x: 80, y: 71, seatNumber: 13, label: '13 Ventana Der' },
+
+    // Row 5 (Rear 4 seats aligned straight):
+    { id: 'seat-14', type: 'seat', x: 19, y: 86, seatNumber: 14, label: '14 Fondo Izq' },
+    { id: 'seat-15', type: 'seat', x: 39, y: 86, seatNumber: 15, label: '15 Fondo Centro' },
+    { id: 'seat-16', type: 'seat', x: 61, y: 86, seatNumber: 16, label: '16 Fondo Centro' },
+    { id: 'seat-17', type: 'seat', x: 81, y: 86, seatNumber: 17, label: '17 Fondo Der' },
+
+    // Rear Luggage Door:
+    { id: 'door-rear', type: 'door', doorType: 'rear', x: 50, y: 96, label: 'Portón Trasero' }
   ]
 }
 
 export function buildDefaultSprinterFreeform(): FreeformLayoutItem[] {
   return [
+    { id: 'door-driver', type: 'door', doorType: 'front_left', x: 6, y: 9, label: 'Puerta Chofer' },
+    { id: 'door-copilot', type: 'door', doorType: 'front_right', x: 94, y: 9, label: 'Puerta Copiloto' },
+    { id: 'door-sliding', type: 'door', doorType: 'sliding', x: 94, y: 24, label: 'Puerta Corrediza' },
+
     { id: 'drv-01', type: 'driver', x: 22, y: 9, label: 'Chofer' },
     { id: 'seat-01', type: 'seat', x: 78, y: 9, seatNumber: 1, label: '01 Copiloto' },
-    { id: 'door-01', type: 'door', x: 88, y: 24, label: 'Puerta de Subida' },
-    { id: 'seat-02', type: 'seat', x: 22, y: 24, seatNumber: 2, label: '02 Ventana' },
-    { id: 'seat-03', type: 'seat', x: 44, y: 24, seatNumber: 3, label: '03 Pasillo' },
+
+    { id: 'seat-02', type: 'seat', x: 22, y: 24, seatNumber: 2, label: '02 Ventana Izq' },
+    { id: 'seat-03', type: 'seat', x: 44, y: 24, seatNumber: 3, label: '03 Pasillo Izq' },
+
     { id: 'seat-04', type: 'seat', x: 22, y: 38, seatNumber: 4, label: '04 Ventana' },
     { id: 'seat-05', type: 'seat', x: 44, y: 38, seatNumber: 5, label: '05 Pasillo' },
-    { id: 'seat-06', type: 'seat', x: 78, y: 38, seatNumber: 6, label: '06 Ventana' },
-    { id: 'seat-07', type: 'seat', x: 22, y: 52, seatNumber: 7, label: '07 Ventana' },
-    { id: 'seat-08', type: 'seat', x: 44, y: 52, seatNumber: 8, label: '08 Pasillo' },
-    { id: 'seat-09', type: 'seat', x: 78, y: 52, seatNumber: 9, label: '09 Ventana' },
-    { id: 'seat-10', type: 'seat', x: 22, y: 66, seatNumber: 10, label: '10 Ventana' },
-    { id: 'seat-11', type: 'seat', x: 44, y: 66, seatNumber: 11, label: '11 Pasillo' },
-    { id: 'seat-12', type: 'seat', x: 78, y: 66, seatNumber: 12, label: '12 Ventana' },
-    { id: 'seat-13', type: 'seat', x: 22, y: 79, seatNumber: 13, label: '13 Ventana' },
-    { id: 'seat-14', type: 'seat', x: 44, y: 79, seatNumber: 14, label: '14 Pasillo' },
-    { id: 'seat-15', type: 'seat', x: 78, y: 79, seatNumber: 15, label: '15 Ventana' },
-    { id: 'seat-16', type: 'seat', x: 18, y: 92, seatNumber: 16, label: '16 Fondo Izq' },
-    { id: 'seat-17', type: 'seat', x: 38, y: 92, seatNumber: 17, label: '17 Fondo' },
-    { id: 'seat-18', type: 'seat', x: 60, y: 92, seatNumber: 18, label: '18 Fondo' },
-    { id: 'seat-19', type: 'seat', x: 82, y: 92, seatNumber: 19, label: '19 Fondo Der' }
+    { id: 'seat-06', type: 'seat', x: 78, y: 38, seatNumber: 6, label: '06 Ventana Der' },
+
+    { id: 'seat-07', type: 'seat', x: 22, y: 51, seatNumber: 7, label: '07 Ventana' },
+    { id: 'seat-08', type: 'seat', x: 44, y: 51, seatNumber: 8, label: '08 Pasillo' },
+    { id: 'seat-09', type: 'seat', x: 78, y: 51, seatNumber: 9, label: '09 Ventana Der' },
+
+    { id: 'seat-10', type: 'seat', x: 22, y: 64, seatNumber: 10, label: '10 Ventana' },
+    { id: 'seat-11', type: 'seat', x: 44, y: 64, seatNumber: 11, label: '11 Pasillo' },
+    { id: 'seat-12', type: 'seat', x: 78, y: 64, seatNumber: 12, label: '12 Ventana Der' },
+
+    { id: 'seat-13', type: 'seat', x: 22, y: 77, seatNumber: 13, label: '13 Ventana' },
+    { id: 'seat-14', type: 'seat', x: 44, y: 77, seatNumber: 14, label: '14 Pasillo' },
+    { id: 'seat-15', type: 'seat', x: 78, y: 77, seatNumber: 15, label: '15 Ventana Der' },
+
+    { id: 'seat-16', type: 'seat', x: 19, y: 90, seatNumber: 16, label: '16 Fondo Izq' },
+    { id: 'seat-17', type: 'seat', x: 39, y: 90, seatNumber: 17, label: '17 Fondo' },
+    { id: 'seat-18', type: 'seat', x: 59, y: 90, seatNumber: 18, label: '18 Fondo' },
+    { id: 'seat-19', type: 'seat', x: 80, y: 90, seatNumber: 19, label: '19 Fondo Der' },
+
+    { id: 'door-rear', type: 'door', doorType: 'rear', x: 50, y: 97, label: 'Portón Trasero' }
   ]
 }
 
 export function buildDefaultHiAceFreeform(): FreeformLayoutItem[] {
   return [
+    { id: 'door-driver', type: 'door', doorType: 'front_left', x: 6, y: 10, label: 'Puerta Chofer' },
+    { id: 'door-copilot', type: 'door', doorType: 'front_right', x: 94, y: 10, label: 'Puerta Copiloto' },
+    { id: 'door-sliding', type: 'door', doorType: 'sliding', x: 94, y: 28, label: 'Puerta Corrediza' },
+
     { id: 'drv-01', type: 'driver', x: 24, y: 10, label: 'Chofer' },
     { id: 'seat-01', type: 'seat', x: 76, y: 10, seatNumber: 1, label: '01 Copiloto' },
-    { id: 'door-01', type: 'door', x: 88, y: 28, label: 'Puerta Lateral' },
-    { id: 'seat-02', type: 'seat', x: 24, y: 28, seatNumber: 2, label: '02 Ventana' },
+
+    { id: 'seat-02', type: 'seat', x: 24, y: 28, seatNumber: 2, label: '02 Ventana Izq' },
+
     { id: 'seat-03', type: 'seat', x: 24, y: 46, seatNumber: 3, label: '03 Ventana' },
     { id: 'seat-04', type: 'seat', x: 48, y: 46, seatNumber: 4, label: '04 Pasillo' },
     { id: 'seat-05', type: 'seat', x: 76, y: 46, seatNumber: 5, label: '05 Ventana Der' },
+
     { id: 'seat-06', type: 'seat', x: 24, y: 64, seatNumber: 6, label: '06 Ventana' },
     { id: 'seat-07', type: 'seat', x: 48, y: 64, seatNumber: 7, label: '07 Pasillo' },
     { id: 'seat-08', type: 'seat', x: 76, y: 64, seatNumber: 8, label: '08 Ventana Der' },
+
     { id: 'seat-09', type: 'seat', x: 18, y: 88, seatNumber: 9, label: '09 Fondo Izq' },
     { id: 'seat-10', type: 'seat', x: 39, y: 88, seatNumber: 10, label: '10 Fondo Centro' },
     { id: 'seat-11', type: 'seat', x: 60, y: 88, seatNumber: 11, label: '11 Fondo Centro' },
-    { id: 'seat-12', type: 'seat', x: 82, y: 88, seatNumber: 12, label: '12 Fondo Der' }
+    { id: 'seat-12', type: 'seat', x: 82, y: 88, seatNumber: 12, label: '12 Fondo Der' },
+
+    { id: 'door-rear', type: 'door', doorType: 'rear', x: 50, y: 96, label: 'Portón Trasero' }
   ]
 }
 
@@ -225,7 +263,6 @@ export const DEFAULT_MODELS: MinivanModel[] = [
 ]
 
 export function generateInitialSeats(model: MinivanModel, price: number): Seat[] {
-  // If model has freeform elements, generate seats from freeform items!
   if (model.freeformElements && model.freeformElements.length > 0) {
     const seatItems = model.freeformElements.filter(e => e.type === 'seat')
     return seatItems.map((item, idx) => {
@@ -242,7 +279,6 @@ export function generateInitialSeats(model: MinivanModel, price: number): Seat[]
     })
   }
 
-  // Fallback
   const seats: Seat[] = []
   for (let i = 1; i <= model.totalSeats; i++) {
     seats.push({
@@ -258,12 +294,12 @@ export function generateInitialSeats(model: MinivanModel, price: number): Seat[]
   return seats
 }
 
-const STORAGE_KEY_TRIPS = 'cupora_trips_v3'
-const STORAGE_KEY_MODELS = 'cupora_models_v3'
-const STORAGE_KEY_TICKETS = 'cupora_tickets_v3'
+const STORAGE_KEY_TRIPS = 'cupora_trips_v4'
+const STORAGE_KEY_MODELS = 'cupora_models_v4'
+const STORAGE_KEY_TICKETS = 'cupora_tickets_v4'
 
 const channel = typeof window !== 'undefined' && 'BroadcastChannel' in window 
-  ? new BroadcastChannel('cupora_sync_bus_v3') 
+  ? new BroadcastChannel('cupora_sync_bus_v4') 
   : null
 
 export function broadcastChange(type: string, payload?: any) {

@@ -2,6 +2,8 @@ export type SeatStatus = 'available' | 'selected' | 'locked' | 'sold_app' | 'sol
 
 export type CellType = 'seat' | 'aisle' | 'door' | 'driver' | 'luggage'
 
+export type DoorType = 'sliding' | 'front_right' | 'front_left' | 'rear'
+
 export type UserRole = 'passenger' | 'driver' | 'admin'
 
 export interface UserAccount {
@@ -20,6 +22,7 @@ export interface FreeformLayoutItem {
   type: 'seat' | 'door' | 'driver' | 'luggage'
   x: number // percentage 0 - 100 from left
   y: number // percentage 0 - 100 from top
+  doorType?: DoorType
   seatNumber?: number
   label?: string
   price?: number
