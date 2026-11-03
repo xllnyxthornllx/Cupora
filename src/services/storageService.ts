@@ -230,6 +230,7 @@ export const DEFAULT_MODELS: MinivanModel[] = [
     doorCol: 3,
     description: 'Minivan interurbana climatizada, puerta corrediza derecha, maletero posterior.',
     defaultPrice: 25.0,
+    seatScale: 'lg',
     freeformElements: buildDefaultRenaultFreeform()
   },
   {
@@ -244,6 +245,7 @@ export const DEFAULT_MODELS: MinivanModel[] = [
     doorCol: 3,
     description: 'Unidad ejecutiva con cargadores USB, pasillo amplio y aire forzado.',
     defaultPrice: 25.0,
+    seatScale: 'lg',
     freeformElements: buildDefaultSprinterFreeform()
   },
   {
@@ -258,6 +260,7 @@ export const DEFAULT_MODELS: MinivanModel[] = [
     doorCol: 3,
     description: 'Vehículo ágil para rutas rápidas con salida cada 20 minutos.',
     defaultPrice: 25.0,
+    seatScale: 'lg',
     freeformElements: buildDefaultHiAceFreeform()
   }
 ]

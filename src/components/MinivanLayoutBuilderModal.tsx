@@ -1,7 +1,63 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { MinivanModel, FreeformLayoutItem, Trip, DoorType } from '../types'
+import { MinivanModel, FreeformLayoutItem, Trip, DoorType, SeatScale } from '../types'
 import { saveTrips, generateInitialSeats, buildDefaultRenaultFreeform, buildDefaultSprinterFreeform, buildDefaultHiAceFreeform } from '../services/storageService'
-import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Trash2, Check, Sparkles, HelpCircle, Edit3, Wand2, MousePointer, Move, AlignJustify } from 'lucide-react'
+import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Trash2, Check, Sparkles, HelpCircle, Edit3, Wand2, MousePointer, Move, AlignJustify, Sliders } from 'lucide-react'
+
+// Visual dimensions specification for layout builder canvas
+const SCALE_CONFIG = {
+  sm: {
+    containerHeight: 'h-[580px]',
+    seatSize: 'w-12 h-12', // 48px
+    seatRadius: 'rounded-xl',
+    iconSize: 'w-3.5 h-3.5',
+    seatText: 'text-[11px]',
+    driverSize: 'w-12 h-12',
+    driverWheel: 'w-5 h-5',
+    doorSliding: 'w-13 h-13',
+    doorCab: 'w-11 h-10',
+    doorRear: 'w-24 h-6',
+    luggage: 'w-14 h-9'
+  },
+  md: {
+    containerHeight: 'h-[630px]',
+    seatSize: 'w-14 h-14', // 56px
+    seatRadius: 'rounded-2xl',
+    iconSize: 'w-4 h-4',
+    seatText: 'text-xs font-bold',
+    driverSize: 'w-14 h-14',
+    driverWheel: 'w-6 h-6',
+    doorSliding: 'w-15 h-15',
+    doorCab: 'w-12 h-11',
+    doorRear: 'w-28 h-7',
+    luggage: 'w-16 h-10'
+  },
+  lg: { // Default / Prime
+    containerHeight: 'h-[680px]',
+    seatSize: 'w-[66px] h-[66px]', // 66px
+    seatRadius: 'rounded-2xl',
+    iconSize: 'w-5 h-5',
+    seatText: 'text-sm font-black',
+    driverSize: 'w-[66px] h-[66px]',
+    driverWheel: 'w-7 h-7',
+    doorSliding: 'w-18 h-18',
+    doorCab: 'w-14 h-12',
+    doorRear: 'w-32 h-8',
+    luggage: 'w-20 h-11'
+  },
+  xl: {
+    containerHeight: 'h-[750px]',
+    seatSize: 'w-[76px] h-[76px]', // 76px
+    seatRadius: 'rounded-2xl',
+    iconSize: 'w-6 h-6',
+    seatText: 'text-base font-black',
+    driverSize: 'w-[76px] h-[76px]',
+    driverWheel: 'w-8 h-8',
+    doorSliding: 'w-20 h-20',
+    doorCab: 'w-16 h-14',
+    doorRear: 'w-36 h-9',
+    luggage: 'w-24 h-12'
+  }
+}
 
 interface MinivanLayoutBuilderModalProps {
   isOpen: boolean
@@ -27,6 +83,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
   const [plate, setPlate] = useState<string>(modelToEdit.plate)
   const [driverName, setDriverName] = useState<string>(modelToEdit.driverName)
   const [defaultPrice, setDefaultPrice] = useState<number>(modelToEdit.defaultPrice)
+  const [seatScale, setSeatScale] = useState<SeatScale>(modelToEdit.seatScale || 'lg')
   const [elements, setElements] = useState<FreeformLayoutItem[]>([])
 
   // Tools: 'select' | 'add_seat' | 'door_sliding' | 'door_copilot' | 'door_driver' | 'door_rear' | 'add_driver' | 'delete'
@@ -46,6 +103,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       setPlate(modelToEdit.plate)
       setDriverName(modelToEdit.driverName)
       setDefaultPrice(modelToEdit.defaultPrice)
+      setSeatScale(modelToEdit.seatScale || 'lg')
 
       if (modelToEdit.freeformElements && modelToEdit.freeformElements.length > 0) {
         setElements([...modelToEdit.freeformElements])
@@ -302,6 +360,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
       driverName: driverName.trim(),
       defaultPrice,
       totalSeats: seatItems.length,
+      seatScale,
       doorRow: doorItem ? Math.round((doorItem.y / 100) * 6) : 1,
       doorCol: doorItem ? (doorItem.x > 50 ? 3 : 0) : 3,
       freeformElements: elements
@@ -327,6 +386,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
   }
 
   const totalSeatsCount = elements.filter(el => el.type === 'seat').length
+  const currentCfg = SCALE_CONFIG[seatScale]
 
   return (
     <dialog
@@ -422,6 +482,50 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
               className="py-1 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold border border-slate-700"
             >
               HiAce 12
+            </button>
+          </div>
+
+          {/* Size / Scale Selector */}
+          <div className="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-800">
+            <span className="text-slate-300 font-bold text-[11px] flex items-center gap-1 mr-1">
+              <Sliders className="w-3.5 h-3.5 text-teal-400" />
+              Tamaño:
+            </span>
+            <button
+              type="button"
+              onClick={() => setSeatScale('sm')}
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all ${
+                seatScale === 'sm' ? 'bg-teal-500 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Chico
+            </button>
+            <button
+              type="button"
+              onClick={() => setSeatScale('md')}
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all ${
+                seatScale === 'md' ? 'bg-teal-500 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Normal
+            </button>
+            <button
+              type="button"
+              onClick={() => setSeatScale('lg')}
+              className={`px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition-all ${
+                seatScale === 'lg' ? 'bg-teal-500 text-slate-950 shadow font-black ring-1 ring-teal-300' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Grande ⭐
+            </button>
+            <button
+              type="button"
+              onClick={() => setSeatScale('xl')}
+              className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all ${
+                seatScale === 'xl' ? 'bg-teal-500 text-slate-950 shadow font-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              XL
             </button>
           </div>
 
@@ -562,7 +666,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
             onClick={handleCanvasClick}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            className="relative w-full h-[590px] max-w-md mx-auto bg-slate-950 rounded-2xl border-2 border-dashed border-slate-800 overflow-hidden cursor-crosshair select-none"
+            className={`relative w-full ${currentCfg.containerHeight} max-w-[480px] sm:max-w-[530px] mx-auto bg-slate-950 rounded-2xl border-2 border-dashed border-slate-800 overflow-hidden cursor-crosshair select-none transition-all duration-200`}
             style={{
               backgroundImage: 'radial-gradient(circle, rgba(56, 189, 248, 0.15) 1.5px, transparent 1.5px)',
               backgroundSize: '24px 24px'
@@ -594,15 +698,15 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                     key={item.id}
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
-                    className={`absolute flex flex-col items-center justify-center w-13 h-13 rounded-2xl bg-slate-900 border-2 text-slate-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 ${
+                    className={`absolute flex flex-col items-center justify-center ${currentCfg.driverSize} rounded-2xl bg-slate-900 border-2 text-slate-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 transition-all ${
                       isSelected ? 'border-teal-400 ring-2 ring-teal-400' : 'border-slate-600'
                     }`}
                     style={{ left: `${item.x}%`, top: `${item.y}%` }}
                   >
-                    <div className="w-6 h-6 rounded-full border border-slate-400 flex items-center justify-center mb-0.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                    <div className={`${currentCfg.driverWheel} rounded-full border border-slate-400 flex items-center justify-center mb-0.5`}>
+                      <div className="w-2 h-2 rounded-full bg-slate-300"></div>
                     </div>
-                    <span className="text-[8px] font-bold uppercase text-slate-300">Chofer</span>
+                    <span className="text-[9px] font-black uppercase text-slate-200">Chofer</span>
                   </div>
                 )
               }
@@ -617,15 +721,15 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                     key={item.id}
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
-                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 text-teal-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 z-10 ${
+                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 text-teal-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 z-10 transition-all ${
                       isSliding
-                        ? 'w-14 h-14 bg-teal-950/80 border-dashed border-teal-400'
-                        : 'w-12 h-11 bg-slate-900 border-teal-500/60'
+                        ? `${currentCfg.doorSliding} bg-teal-950/85 border-dashed border-teal-400`
+                        : `${currentCfg.doorCab} bg-slate-900 border-teal-500/60`
                     } ${isSelected ? 'ring-2 ring-white' : ''}`}
                     style={{ left: `${item.x}%`, top: `${item.y}%` }}
                   >
-                    <DoorOpen className="w-4 h-4 text-teal-300 mb-0.5" />
-                    <span className="text-[7px] font-black uppercase text-teal-300">
+                    <DoorOpen className={`${currentCfg.iconSize} text-teal-300 mb-0.5`} />
+                    <span className="text-[8px] font-black uppercase text-teal-300 leading-tight">
                       {isSliding ? 'Corrediza' : isCopilot ? 'Copiloto' : isDriverDoor ? 'Chofer' : 'Portón'}
                     </span>
                   </div>
@@ -638,7 +742,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                     key={item.id}
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
-                    className={`absolute flex items-center justify-center w-16 h-10 rounded-xl bg-amber-950/40 border text-amber-300 text-[8px] font-bold gap-1 cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 ${
+                    className={`absolute flex items-center justify-center ${currentCfg.luggage} rounded-xl bg-amber-950/40 border text-amber-300 text-[9px] font-bold gap-1 cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 transition-all ${
                       isSelected ? 'border-amber-300 ring-2 ring-amber-400' : 'border-amber-700/60'
                     }`}
                     style={{ left: `${item.x}%`, top: `${item.y}%` }}
@@ -655,15 +759,15 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                   key={item.id}
                   onClick={e => handleElementClick(e, item)}
                   onMouseDown={e => handleMouseDown(e, item.id)}
-                  className={`absolute w-13 h-13 rounded-2xl flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-all -translate-x-1/2 -translate-y-1/2 ${
+                  className={`absolute ${currentCfg.seatSize} ${currentCfg.seatRadius} flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-all -translate-x-1/2 -translate-y-1/2 ${
                     isSelected
-                      ? 'bg-gradient-to-br from-teal-400 to-emerald-600 text-white border-2 border-white shadow-xl shadow-teal-500/40 ring-2 ring-teal-300 z-20 scale-105'
-                      : 'bg-slate-800 hover:bg-slate-700 text-teal-300 border-2 border-teal-500/70 shadow-md'
+                      ? 'bg-gradient-to-br from-teal-400 to-emerald-600 text-white border-2 border-white shadow-xl shadow-teal-500/40 ring-4 ring-teal-300 z-20 scale-105'
+                      : 'bg-slate-800 hover:bg-slate-700 text-teal-300 border-2 border-teal-500/80 shadow-md'
                   }`}
                   style={{ left: `${item.x}%`, top: `${item.y}%` }}
                 >
-                  <Armchair className="w-4 h-4 mb-0.5" />
-                  <span className="font-mono font-black text-xs text-white">
+                  <Armchair className={`${currentCfg.iconSize} mb-0.5`} />
+                  <span className={`font-mono font-black ${currentCfg.seatText} text-white leading-none`}>
                     #{item.seatNumber?.toString().padStart(2, '0') || '01'}
                   </span>
                 </div>

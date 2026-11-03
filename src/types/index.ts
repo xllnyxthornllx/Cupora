@@ -4,6 +4,8 @@ export type CellType = 'seat' | 'aisle' | 'door' | 'driver' | 'luggage'
 
 export type DoorType = 'sliding' | 'front_right' | 'front_left' | 'rear'
 
+export type SeatScale = 'sm' | 'md' | 'lg' | 'xl'
+
 export type UserRole = 'passenger' | 'driver' | 'admin'
 
 export interface UserAccount {
@@ -67,6 +69,7 @@ export interface MinivanModel {
   doorCol: number
   description: string
   defaultPrice: number
+  seatScale?: 'sm' | 'md' | 'lg' | 'xl'
   layoutGrid?: LayoutCell[]
   freeformElements?: FreeformLayoutItem[]
 }
