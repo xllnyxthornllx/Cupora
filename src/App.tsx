@@ -4,18 +4,24 @@ import { LandingView } from './views/LandingView'
 import { PassengerView } from './views/PassengerView'
 import { DriverView } from './views/DriverView'
 import { AdminView } from './views/AdminView'
+import { LoginModal } from './components/LoginModal'
 import { 
   getSavedTrips, 
   getSavedModels, 
   getSavedTickets, 
+  getCurrentUser,
+  setCurrentUser,
   subscribeToSync, 
   resetDemoData 
 } from './services/storageService'
-import { Trip, MinivanModel, TicketData } from './types'
+import { Trip, MinivanModel, TicketData, UserAccount } from './types'
 import { Shield, Sparkles, MapPin, Zap, Smartphone, Check, ArrowDownToLine } from 'lucide-react'
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('landing')
+  const [currentUser, setAuthUser] = useState<UserAccount | null>(null)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false)
+
   const [trips, setTrips] = useState<Trip[]>([])
   const [models, setModels] = useState<MinivanModel[]>([])
   const [tickets, setTickets] = useState<TicketData[]>([])
@@ -27,12 +33,12 @@ export function App() {
     setTrips(getSavedTrips())
     setModels(getSavedModels())
     setTickets(getSavedTickets())
+    setAuthUser(getCurrentUser())
   }
 
   useEffect(() => {
     loadAllData()
 
-    // Listen for cross-tab broadcasts
     const unsubscribe = subscribeToSync((type, payload) => {
       loadAllData()
       if (type === 'TRIPS_UPDATED') {
@@ -41,6 +47,8 @@ export function App() {
       } else if (type === 'MODELS_UPDATED') {
         setSyncToast('🚐 Se actualizó la distribución de asientos de la minivan.')
         setTimeout(() => setSyncToast(null), 3500)
+      } else if (type === 'AUTH_CHANGED') {
+        setAuthUser(payload)
       } else if (type === 'DEMO_RESET') {
         setSyncToast('🔄 Datos de demostración restaurados.')
         setTimeout(() => setSyncToast(null), 3500)
@@ -57,6 +65,28 @@ export function App() {
     }
   }
 
+  const handleLoginSuccess = (user: UserAccount) => {
+    setAuthUser(user)
+    setSyncToast(`👋 Sesión iniciada: ${user.name} (${user.role.toUpperCase()})`)
+    setTimeout(() => setSyncToast(null), 3500)
+
+    // Route user directly to their respective interface
+    if (user.role === 'driver') {
+      setActiveTab('driver')
+    } else if (user.role === 'admin') {
+      setActiveTab('admin')
+    } else {
+      setActiveTab('passenger')
+    }
+  }
+
+  const handleLogout = () => {
+    setCurrentUser(null)
+    setAuthUser(null)
+    setSyncToast('🔒 Has cerrado sesión.')
+    setTimeout(() => setSyncToast(null), 3000)
+  }
+
   return (
     <div className="min-h-[100dvh] flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-teal-500 selection:text-white antialiased">
       {/* Top Navbar */}
@@ -64,6 +94,9 @@ export function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onResetDemo={handleResetDemo}
+        currentUser={currentUser}
+        onOpenLogin={() => setIsLoginModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Floating Sync Notification Toast */}
@@ -74,7 +107,7 @@ export function App() {
         </div>
       )}
 
-      {/* Optional Mobile PWA Install / Ready Banner */}
+      {/* Mobile PWA Install / Ready Banner */}
       {showPwaBanner && (
         <div className="bg-gradient-to-r from-teal-950/80 via-slate-950 to-emerald-950/80 border-b border-teal-500/20 px-4 py-2.5">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
@@ -83,7 +116,7 @@ export function App() {
                 <Smartphone className="w-3.5 h-3.5" />
               </span>
               <span>
-                <strong>PWA Móvil Cupora:</strong> Diseñado para funcionar 100% en teléfonos Android & iOS.
+                <strong>PWA Móvil Cupora:</strong> Inicia sesión como Pasajero, Chofer o Administrador con roles sincronizados.
               </span>
             </div>
 
@@ -98,7 +131,7 @@ export function App() {
         </div>
       )}
 
-      {/* Main Container (Padded for mobile bottom bar) */}
+      {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-28 md:pb-14">
         {activeTab === 'landing' && <LandingView onNavigate={setActiveTab} />}
         {activeTab === 'passenger' && (
@@ -106,6 +139,8 @@ export function App() {
             trips={trips}
             models={models}
             onUpdateTrips={setTrips}
+            currentUser={currentUser}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
           />
         )}
         {activeTab === 'driver' && (
@@ -114,6 +149,8 @@ export function App() {
             models={models}
             tickets={tickets}
             onUpdateTrips={setTrips}
+            currentUser={currentUser}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
           />
         )}
         {activeTab === 'admin' && (
@@ -154,6 +191,13 @@ export function App() {
           </div>
         </div>
       </footer>
+
+      {/* Login / Register Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   )
 }

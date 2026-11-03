@@ -2,6 +2,19 @@ export type SeatStatus = 'available' | 'selected' | 'locked' | 'sold_app' | 'sol
 
 export type CellType = 'seat' | 'aisle' | 'door' | 'driver' | 'luggage'
 
+export type UserRole = 'passenger' | 'driver' | 'admin'
+
+export interface UserAccount {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  phone?: string
+  dni?: string
+  assignedModelId?: string
+  assignedPlate?: string
+}
+
 export interface LayoutCell {
   row: number
   col: number

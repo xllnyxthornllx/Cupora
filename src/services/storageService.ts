@@ -1,4 +1,72 @@
-import { MinivanModel, RouteOption, Trip, Seat, TicketData, LayoutCell } from '../types'
+import { MinivanModel, RouteOption, Trip, Seat, TicketData, LayoutCell, UserAccount } from '../types'
+
+// Default Demo Accounts
+export const DEFAULT_USERS: UserAccount[] = [
+  {
+    id: 'user-passenger-01',
+    name: 'Juan Carlos Pérez',
+    email: 'pasajero@cupora.pe',
+    role: 'passenger',
+    phone: '954 123 456',
+    dni: '45918234'
+  },
+  {
+    id: 'user-driver-01',
+    name: 'Víctor Mamani',
+    email: 'chofer@cupora.pe',
+    role: 'driver',
+    phone: '984 765 432',
+    dni: '29841203',
+    assignedModelId: 'renault-master-15',
+    assignedPlate: 'Z4V-753'
+  },
+  {
+    id: 'user-admin-01',
+    name: 'Central de Despacho & Control',
+    email: 'admin@cupora.pe',
+    role: 'admin',
+    phone: '054 284910',
+    dni: '10482910'
+  }
+]
+
+const STORAGE_KEY_AUTH_USER = 'cupora_auth_user_v1'
+const STORAGE_KEY_USERS_LIST = 'cupora_registered_users_v1'
+
+export function getCurrentUser(): UserAccount | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_AUTH_USER)
+    if (raw) return JSON.parse(raw)
+  } catch (e) {}
+  // Default to passenger demo account initially
+  return DEFAULT_USERS[0]
+}
+
+export function setCurrentUser(user: UserAccount | null) {
+  if (user) {
+    localStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(user))
+  } else {
+    localStorage.removeItem(STORAGE_KEY_AUTH_USER)
+  }
+  broadcastChange('AUTH_CHANGED', user)
+}
+
+export function getAllUsers(): UserAccount[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_USERS_LIST)
+    if (raw) return JSON.parse(raw)
+  } catch (e) {}
+  localStorage.setItem(STORAGE_KEY_USERS_LIST, JSON.stringify(DEFAULT_USERS))
+  return DEFAULT_USERS
+}
+
+export function registerNewUser(account: UserAccount): UserAccount {
+  const users = getAllUsers()
+  const updated = [...users, account]
+  localStorage.setItem(STORAGE_KEY_USERS_LIST, JSON.stringify(updated))
+  setCurrentUser(account)
+  return account
+}
 
 // Default Peruvian interurban routes
 export const DEFAULT_ROUTES: RouteOption[] = [
@@ -45,39 +113,32 @@ export const DEFAULT_ROUTES: RouteOption[] = [
 ]
 
 export function buildDefaultRenaultMasterLayout(): LayoutCell[] {
-  // 5 rows x 4 cols (15 seats + driver + sliding door)
   const cells: LayoutCell[] = []
-  // Row 0: Driver (0,0), Aisle (0,1), Copilot 1 (0,2), Copilot 2 (0,3)
   cells.push({ row: 0, col: 0, type: 'driver', label: 'Chofer' })
   cells.push({ row: 0, col: 1, type: 'aisle' })
   cells.push({ row: 0, col: 2, type: 'seat', seatNumber: 1, label: '01 Copiloto Centro' })
   cells.push({ row: 0, col: 3, type: 'seat', seatNumber: 2, label: '02 Copiloto Ventana' })
 
-  // Row 1: Seat 3 (1,0), Seat 4 (1,1), Aisle (1,2), Door (1,3 - Puerta Corrediza Lateral)
   cells.push({ row: 1, col: 0, type: 'seat', seatNumber: 3, label: '03 Ventana Izquierda' })
   cells.push({ row: 1, col: 1, type: 'seat', seatNumber: 4, label: '04 Pasillo' })
   cells.push({ row: 1, col: 2, type: 'aisle' })
   cells.push({ row: 1, col: 3, type: 'door', label: 'Puerta de Subida' })
 
-  // Row 2: Seat 5 (2,0), Seat 6 (2,1), Aisle (2,2), Seat 7 (2,3)
   cells.push({ row: 2, col: 0, type: 'seat', seatNumber: 5, label: '05 Ventana Izquierda' })
   cells.push({ row: 2, col: 1, type: 'seat', seatNumber: 6, label: '06 Pasillo' })
   cells.push({ row: 2, col: 2, type: 'aisle' })
   cells.push({ row: 2, col: 3, type: 'seat', seatNumber: 7, label: '07 Ventana Derecha' })
 
-  // Row 3: Seat 8 (3,0), Seat 9 (3,1), Aisle (3,2), Seat 10 (3,3)
   cells.push({ row: 3, col: 0, type: 'seat', seatNumber: 8, label: '08 Ventana Izquierda' })
   cells.push({ row: 3, col: 1, type: 'seat', seatNumber: 9, label: '09 Pasillo' })
   cells.push({ row: 3, col: 2, type: 'aisle' })
   cells.push({ row: 3, col: 3, type: 'seat', seatNumber: 10, label: '10 Ventana Derecha' })
 
-  // Row 4: Seat 11 (4,0), Seat 12 (4,1), Seat 13 (4,2), Seat 14 (4,3)
   cells.push({ row: 4, col: 0, type: 'seat', seatNumber: 11, label: '11 Fondo Izquierda' })
   cells.push({ row: 4, col: 1, type: 'seat', seatNumber: 12, label: '12 Fondo Centro 1' })
   cells.push({ row: 4, col: 2, type: 'seat', seatNumber: 13, label: '13 Fondo Centro 2' })
   cells.push({ row: 4, col: 3, type: 'seat', seatNumber: 14, label: '14 Fondo Derecha' })
 
-  // Row 5: Additional seat or luggage space
   cells.push({ row: 5, col: 0, type: 'seat', seatNumber: 15, label: '15 Asiento Posterior' })
   cells.push({ row: 5, col: 1, type: 'luggage', label: 'Maletero' })
   cells.push({ row: 5, col: 2, type: 'luggage', label: 'Maletero' })
@@ -88,37 +149,31 @@ export function buildDefaultRenaultMasterLayout(): LayoutCell[] {
 
 export function buildDefaultSprinterLayout(): LayoutCell[] {
   const cells: LayoutCell[] = []
-  // Row 0: Driver (0,0), Aisle (0,1), Aisle (0,2), Copilot 1 (0,3)
   cells.push({ row: 0, col: 0, type: 'driver', label: 'Chofer' })
   cells.push({ row: 0, col: 1, type: 'aisle' })
   cells.push({ row: 0, col: 2, type: 'aisle' })
   cells.push({ row: 0, col: 3, type: 'seat', seatNumber: 1, label: '01 Copiloto' })
 
-  // Row 1: Seat 2, 3, Aisle, Door
   cells.push({ row: 1, col: 0, type: 'seat', seatNumber: 2, label: '02 Ventana Izq' })
   cells.push({ row: 1, col: 1, type: 'seat', seatNumber: 3, label: '03 Pasillo Izq' })
   cells.push({ row: 1, col: 2, type: 'aisle' })
   cells.push({ row: 1, col: 3, type: 'door', label: 'Puerta de Subida' })
 
-  // Row 2: Seat 4, 5, Aisle, Seat 6
   cells.push({ row: 2, col: 0, type: 'seat', seatNumber: 4, label: '04 Ventana' })
   cells.push({ row: 2, col: 1, type: 'seat', seatNumber: 5, label: '05 Pasillo' })
   cells.push({ row: 2, col: 2, type: 'aisle' })
   cells.push({ row: 2, col: 3, type: 'seat', seatNumber: 6, label: '06 Ventana Der' })
 
-  // Row 3: Seat 7, 8, Aisle, Seat 9
   cells.push({ row: 3, col: 0, type: 'seat', seatNumber: 7, label: '07 Ventana' })
   cells.push({ row: 3, col: 1, type: 'seat', seatNumber: 8, label: '08 Pasillo' })
   cells.push({ row: 3, col: 2, type: 'aisle' })
   cells.push({ row: 3, col: 3, type: 'seat', seatNumber: 9, label: '09 Ventana Der' })
 
-  // Row 4: Seat 10, 11, Aisle, Seat 12
   cells.push({ row: 4, col: 0, type: 'seat', seatNumber: 10, label: '10 Ventana' })
   cells.push({ row: 4, col: 1, type: 'seat', seatNumber: 11, label: '11 Pasillo' })
   cells.push({ row: 4, col: 2, type: 'aisle' })
   cells.push({ row: 4, col: 3, type: 'seat', seatNumber: 12, label: '12 Ventana' })
 
-  // Row 5: Back Row (13, 14, 15)
   cells.push({ row: 5, col: 0, type: 'seat', seatNumber: 13, label: '13 Fondo' })
   cells.push({ row: 5, col: 1, type: 'seat', seatNumber: 14, label: '14 Fondo' })
   cells.push({ row: 5, col: 2, type: 'luggage', label: 'Bodega' })
@@ -129,31 +184,26 @@ export function buildDefaultSprinterLayout(): LayoutCell[] {
 
 export function buildDefaultHiAceLayout(): LayoutCell[] {
   const cells: LayoutCell[] = []
-  // Row 0
   cells.push({ row: 0, col: 0, type: 'driver', label: 'Chofer' })
   cells.push({ row: 0, col: 1, type: 'aisle' })
   cells.push({ row: 0, col: 2, type: 'aisle' })
   cells.push({ row: 0, col: 3, type: 'seat', seatNumber: 1, label: '01 Copiloto' })
 
-  // Row 1
   cells.push({ row: 1, col: 0, type: 'seat', seatNumber: 2, label: '02 Ventana' })
   cells.push({ row: 1, col: 1, type: 'aisle' })
   cells.push({ row: 1, col: 2, type: 'aisle' })
   cells.push({ row: 1, col: 3, type: 'door', label: 'Puerta Lateral' })
 
-  // Row 2
   cells.push({ row: 2, col: 0, type: 'seat', seatNumber: 3, label: '03 Ventana' })
   cells.push({ row: 2, col: 1, type: 'seat', seatNumber: 4, label: '04 Pasillo' })
   cells.push({ row: 2, col: 2, type: 'aisle' })
   cells.push({ row: 2, col: 3, type: 'seat', seatNumber: 5, label: '05 Ventana Der' })
 
-  // Row 3
   cells.push({ row: 3, col: 0, type: 'seat', seatNumber: 6, label: '06 Ventana' })
   cells.push({ row: 3, col: 1, type: 'seat', seatNumber: 7, label: '07 Pasillo' })
   cells.push({ row: 3, col: 2, type: 'aisle' })
   cells.push({ row: 3, col: 3, type: 'seat', seatNumber: 8, label: '08 Ventana Der' })
 
-  // Row 4
   cells.push({ row: 4, col: 0, type: 'seat', seatNumber: 9, label: '09 Fondo Izq' })
   cells.push({ row: 4, col: 1, type: 'seat', seatNumber: 10, label: '10 Fondo Centro' })
   cells.push({ row: 4, col: 2, type: 'aisle' })
@@ -208,7 +258,6 @@ export const DEFAULT_MODELS: MinivanModel[] = [
 ]
 
 export function generateInitialSeats(model: MinivanModel, price: number): Seat[] {
-  // If model has custom layout grid, generate seats strictly from layoutGrid!
   if (model.layoutGrid && model.layoutGrid.length > 0) {
     const seatCells = model.layoutGrid.filter(c => c.type === 'seat')
     return seatCells.map((cell, idx) => {
@@ -225,7 +274,6 @@ export function generateInitialSeats(model: MinivanModel, price: number): Seat[]
     })
   }
 
-  // Fallback default 15 seats
   const seats: Seat[] = []
   for (let i = 1; i <= model.totalSeats; i++) {
     seats.push({
@@ -245,7 +293,6 @@ const STORAGE_KEY_TRIPS = 'cupora_trips_v2'
 const STORAGE_KEY_MODELS = 'cupora_models_v2'
 const STORAGE_KEY_TICKETS = 'cupora_tickets_v2'
 
-// Broadcast Channel for live multi-tab synchronization
 const channel = typeof window !== 'undefined' && 'BroadcastChannel' in window 
   ? new BroadcastChannel('cupora_sync_bus_v2') 
   : null
@@ -403,5 +450,6 @@ export function resetDemoData() {
   localStorage.removeItem(STORAGE_KEY_TRIPS)
   localStorage.removeItem(STORAGE_KEY_MODELS)
   localStorage.removeItem(STORAGE_KEY_TICKETS)
+  localStorage.removeItem(STORAGE_KEY_AUTH_USER)
   broadcastChange('DEMO_RESET')
 }
