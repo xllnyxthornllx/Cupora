@@ -1,5 +1,5 @@
 import React from 'react'
-import { Bus, Smartphone, Shield, Sparkles, RefreshCw, LogIn, LogOut, UserCheck, ChevronDown } from 'lucide-react'
+import { Bus, Smartphone, Shield, Sparkles, RefreshCw, LogIn, LogOut, UserCheck, ChevronDown, User } from 'lucide-react'
 import { UserAccount, UserRole } from '../types'
 
 export type ActiveTab = 'landing' | 'passenger' | 'driver' | 'admin'
@@ -35,6 +35,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const roleInfo = currentUser ? getRoleBadge(currentUser.role) : null
 
+  // Determine which tabs to display based on user role
+  const isDriver = currentUser?.role === 'driver'
+  const isAdmin = currentUser?.role === 'admin'
+  const isPassenger = !currentUser || currentUser?.role === 'passenger'
+
   return (
     <>
       {/* Top Header */}
@@ -42,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Brand Logo */}
           <div 
-            onClick={() => setActiveTab('landing')}
+            onClick={() => setActiveTab(isDriver ? 'driver' : isAdmin ? 'admin' : 'passenger')}
             className="flex items-center gap-2.5 cursor-pointer group select-none shrink-0"
           >
             <img 
@@ -55,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </div>
 
-          {/* Desktop Central Nav Tabs */}
+          {/* Desktop Central Nav Tabs (Adapted to Active Role) */}
           <nav className="hidden md:flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800/80 text-xs shadow-inner">
             <button
               type="button"
@@ -70,54 +75,63 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Inicio</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('passenger')}
-              className={`flex items-center gap-1.5 py-1.5 px-3.5 rounded-xl font-medium transition-all duration-150 ${
-                activeTab === 'passenger'
-                  ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Pasajero PWA</span>
-            </button>
+            {/* Passenger Tab */}
+            {(isPassenger || isAdmin) && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('passenger')}
+                className={`flex items-center gap-1.5 py-1.5 px-3.5 rounded-xl font-medium transition-all duration-150 ${
+                  activeTab === 'passenger'
+                    ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Comprar Pasaje</span>
+              </button>
+            )}
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('driver')}
-              className={`flex items-center gap-1.5 py-1.5 px-3.5 rounded-xl font-medium transition-all duration-150 ${
-                activeTab === 'driver'
-                  ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Bus className="w-3.5 h-3.5" />
-              <span>Chofer PWA</span>
-            </button>
+            {/* Driver Tab */}
+            {(isDriver || isAdmin) && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('driver')}
+                className={`flex items-center gap-1.5 py-1.5 px-3.5 rounded-xl font-medium transition-all duration-150 ${
+                  activeTab === 'driver'
+                    ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                }`}
+              >
+                <Bus className="w-3.5 h-3.5" />
+                <span>Cabina del Chofer</span>
+              </button>
+            )}
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('admin')}
-              className={`flex items-center gap-1.5 py-1.5 px-3.5 rounded-xl font-medium transition-all duration-150 ${
-                activeTab === 'admin'
-                  ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-              }`}
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Despacho</span>
-            </button>
+            {/* Admin Tab */}
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('admin')}
+                className={`flex items-center gap-1.5 py-1.5 px-3.5 rounded-xl font-medium transition-all duration-150 ${
+                  activeTab === 'admin'
+                    ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-md shadow-teal-500/20'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Despacho & Flota</span>
+              </button>
+            )}
           </nav>
 
-          {/* Right Tools: Auth Status, Profile & Reset */}
+          {/* Right Tools: Auth Profile & Role Switcher */}
           <div className="flex items-center gap-2.5">
             {currentUser ? (
               <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-1 pl-2.5 rounded-2xl text-xs">
                 <div 
                   onClick={onOpenLogin}
                   className="flex items-center gap-2 cursor-pointer hover:opacity-80"
-                  title="Cambiar perfil / Iniciar sesión"
+                  title="Cambiar perfil / Iniciar sesión con otra cuenta"
                 >
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleInfo?.color}`}>
                     {roleInfo?.label}
@@ -159,13 +173,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </header>
 
-      {/* Mobile Native App Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar (Tailored to active role) */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-slate-950/90 border-t border-slate-800/90 backdrop-blur-2xl px-3 py-2 shadow-2xl safe-area-bottom">
-        <div className="grid grid-cols-4 gap-1 max-w-md mx-auto">
+        <div className="flex items-center justify-around max-w-md mx-auto">
           <button
             type="button"
             onClick={() => setActiveTab('landing')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all ${
+            className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all ${
               activeTab === 'landing'
                 ? 'text-teal-300 font-bold bg-teal-950/50'
                 : 'text-slate-400 hover:text-white'
@@ -175,43 +189,58 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="text-[10px]">Inicio</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('passenger')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all ${
-              activeTab === 'passenger'
-                ? 'text-teal-300 font-bold bg-teal-950/50'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Smartphone className={`w-5 h-5 mb-0.5 ${activeTab === 'passenger' ? 'text-teal-400' : ''}`} />
-            <span className="text-[10px]">Pasajero</span>
-          </button>
+          {(isPassenger || isAdmin) && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('passenger')}
+              className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all ${
+                activeTab === 'passenger'
+                  ? 'text-teal-300 font-bold bg-teal-950/50'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Smartphone className={`w-5 h-5 mb-0.5 ${activeTab === 'passenger' ? 'text-teal-400' : ''}`} />
+              <span className="text-[10px]">Pasajero</span>
+            </button>
+          )}
+
+          {(isDriver || isAdmin) && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('driver')}
+              className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all ${
+                activeTab === 'driver'
+                  ? 'text-teal-300 font-bold bg-teal-950/50'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Bus className={`w-5 h-5 mb-0.5 ${activeTab === 'driver' ? 'text-teal-400' : ''}`} />
+              <span className="text-[10px]">Chofer</span>
+            </button>
+          )}
+
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('admin')}
+              className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all ${
+                activeTab === 'admin'
+                  ? 'text-teal-300 font-bold bg-teal-950/50'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Shield className={`w-5 h-5 mb-0.5 ${activeTab === 'admin' ? 'text-teal-400' : ''}`} />
+              <span className="text-[10px]">Despacho</span>
+            </button>
+          )}
 
           <button
             type="button"
-            onClick={() => setActiveTab('driver')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all ${
-              activeTab === 'driver'
-                ? 'text-teal-300 font-bold bg-teal-950/50'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={onOpenLogin}
+            className="flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-white transition-all"
           >
-            <Bus className={`w-5 h-5 mb-0.5 ${activeTab === 'driver' ? 'text-teal-400' : ''}`} />
-            <span className="text-[10px]">Chofer</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('admin')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all ${
-              activeTab === 'admin'
-                ? 'text-teal-300 font-bold bg-teal-950/50'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Shield className={`w-5 h-5 mb-0.5 ${activeTab === 'admin' ? 'text-teal-400' : ''}`} />
-            <span className="text-[10px]">Despacho</span>
+            <User className="w-5 h-5 mb-0.5 text-teal-400" />
+            <span className="text-[10px]">{currentUser ? roleInfo?.label : 'Ingresar'}</span>
           </button>
         </div>
       </div>

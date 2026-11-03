@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { MinivanSeatMap } from '../components/MinivanSeatMap'
 import { QRScannerModal } from '../components/QRScannerModal'
+import { RefundModal } from '../components/RefundModal'
 import { Trip, Seat, TicketData, MinivanModel, TripStatus, UserAccount } from '../types'
-import { saveTrips, broadcastChange } from '../services/storageService'
-import { Bus, QrCode, Store, Users, CheckCircle2, AlertCircle, Printer, ArrowRight, ShieldCheck, DollarSign, X, LogIn } from 'lucide-react'
+import { saveTrips, saveTickets, broadcastChange } from '../services/storageService'
+import { Bus, QrCode, Store, Users, CheckCircle2, AlertCircle, Printer, ArrowRight, ShieldCheck, DollarSign, X, RotateCcw, User, Phone } from 'lucide-react'
 
 interface DriverViewProps {
   trips: Trip[]
@@ -25,11 +26,11 @@ export const DriverView: React.FC<DriverViewProps> = ({
   const [selectedTripId, setSelectedTripId] = useState<string>(trips[0]?.id || '')
   const [isScannerOpen, setIsScannerOpen] = useState<boolean>(false)
   const [selectedSeatForAction, setSelectedSeatForAction] = useState<Seat | null>(null)
+  const [seatForRefund, setSeatForRefund] = useState<Seat | null>(null)
   const [windowBuyerName, setWindowBuyerName] = useState<string>('')
   const [windowBuyerDni, setWindowBuyerDni] = useState<string>('')
   const [scanNotification, setScanNotification] = useState<string | null>(null)
 
-  // Auto select driver's assigned vehicle if logged in as driver
   useEffect(() => {
     if (currentUser?.role === 'driver' && currentUser.assignedPlate) {
       const match = trips.find(t => t.plate === currentUser.assignedPlate)
@@ -86,17 +87,17 @@ export const DriverView: React.FC<DriverViewProps> = ({
     saveTrips(updatedTrips)
     onUpdateTrips(updatedTrips)
     setSelectedSeatForAction(null)
+    setScanNotification('Venta registrada en efectivo por ventanilla/paradero.')
+    setTimeout(() => setScanNotification(null), 4000)
   }
 
-  const handleReleaseSeat = () => {
-    if (!selectedSeatForAction) return
-
+  const handleProcessRefund = (seat: Seat, reason: string) => {
     const updatedTrips = trips.map(t => {
       if (t.id === currentTrip.id) {
         return {
           ...t,
           seats: t.seats.map(s => {
-            if (s.id === selectedSeatForAction.id) {
+            if (s.id === seat.id) {
               return {
                 ...s,
                 status: 'available' as const,
@@ -104,7 +105,9 @@ export const DriverView: React.FC<DriverViewProps> = ({
                 passengerDni: undefined,
                 ticketCode: undefined,
                 paymentMethod: undefined,
-                lockedAt: undefined
+                lockedAt: undefined,
+                refunded: true,
+                refundedAt: new Date().toLocaleTimeString('es-PE')
               }
             }
             return s
@@ -114,9 +117,27 @@ export const DriverView: React.FC<DriverViewProps> = ({
       return t
     })
 
+    // Update tickets status to refunded
+    const updatedTickets = tickets.map(t => {
+      if (t.tripId === currentTrip.id && t.seatNumber === seat.number) {
+        return {
+          ...t,
+          status: 'refunded' as const,
+          refundedAt: new Date().toLocaleTimeString('es-PE'),
+          refundReason: reason
+        }
+      }
+      return t
+    })
+
     saveTrips(updatedTrips)
+    saveTickets(updatedTickets)
     onUpdateTrips(updatedTrips)
     setSelectedSeatForAction(null)
+    setSeatForRefund(null)
+
+    setScanNotification(`💰 Devolución efectuada: Se reembolsaron S/. ${seat.price.toFixed(2)} por ${seat.paymentMethod?.toUpperCase() || 'EFECTIVO'}. El Asiento #${seat.number} ha quedado libre.`)
+    setTimeout(() => setScanNotification(null), 5000)
   }
 
   const handleStatusChange = (status: TripStatus) => {
@@ -196,17 +217,17 @@ export const DriverView: React.FC<DriverViewProps> = ({
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <span className="text-xs text-slate-400 block">Venta en Ventanilla / Paradero</span>
+            <span className="text-xs text-slate-400 block">Venta en Ventanilla</span>
             <span className="text-2xl font-black text-rose-400 block mt-1">{windowSales} asientos</span>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <span className="text-xs text-slate-400 block">Venta por App Cupora</span>
+            <span className="text-xs text-slate-400 block">Venta por App</span>
             <span className="text-2xl font-black text-indigo-400 block mt-1">{appSales} boletos</span>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <span className="text-xs text-slate-400 block">Recaudación de Viaje</span>
+            <span className="text-xs text-slate-400 block">Recaudación en Caja</span>
             <span className="text-2xl font-black text-emerald-400 block mt-1">S/. {totalCollected.toFixed(2)}</span>
           </div>
         </div>
@@ -244,13 +265,13 @@ export const DriverView: React.FC<DriverViewProps> = ({
       </div>
 
       {scanNotification && (
-        <div className="bg-emerald-950/80 border border-emerald-500/60 rounded-2xl p-4 text-xs text-emerald-300 flex items-center gap-3 animate-in fade-in">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+        <div className="bg-teal-950/90 border border-teal-500/60 rounded-2xl p-4 text-xs text-teal-300 flex items-center gap-3 animate-in fade-in shadow-xl">
+          <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
           <span>{scanNotification}</span>
         </div>
       )}
 
-      {/* Seat Map & Ventanilla Actions */}
+      {/* Seat Map & Driver Controls */}
       <div className="grid lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-7 bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-xl">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
@@ -259,12 +280,11 @@ export const DriverView: React.FC<DriverViewProps> = ({
                 Control de Asientos en Vivo
               </span>
               <h3 className="text-base font-bold text-white mt-0.5">
-                Toca cualquier asiento para gestionarlo
+                Toca cualquier asiento para gestionarlo o devolver pasaje
               </h3>
             </div>
             <div className="text-right">
-              <span className="text-xs text-slate-400">Tarifa fija:</span>
-              <span className="text-xs font-mono font-bold text-teal-400 ml-1">S/. {currentModel.defaultPrice.toFixed(2)}</span>
+              <span className="text-xs font-mono font-bold text-teal-400">Tarifa fija: S/. {currentModel.defaultPrice.toFixed(2)}</span>
             </div>
           </div>
 
@@ -277,15 +297,15 @@ export const DriverView: React.FC<DriverViewProps> = ({
           />
         </div>
 
-        {/* Ventanilla sale form */}
+        {/* Seat Action Panel */}
         <div className="lg:col-span-5 bg-slate-900/80 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl backdrop-blur-xl space-y-5">
           <div className="border-b border-slate-800 pb-3">
             <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
               <Store className="w-3.5 h-3.5" />
-              <span>Venta en Ventanilla / Paradero</span>
+              <span>Acciones Rápidas del Chofer</span>
             </span>
             <h3 className="text-base font-bold text-white mt-0.5">
-              Gestión Inmediata de Asiento
+              Ventanilla & Devoluciones
             </h3>
           </div>
 
@@ -308,17 +328,19 @@ export const DriverView: React.FC<DriverViewProps> = ({
                 </div>
 
                 {selectedSeatForAction.passengerName && (
-                  <div className="text-xs text-slate-300 pt-1 border-t border-slate-800">
+                  <div className="text-xs text-slate-300 pt-1 border-t border-slate-800 space-y-0.5">
                     <p><strong>Pasajero:</strong> {selectedSeatForAction.passengerName}</p>
                     <p><strong>DNI:</strong> {selectedSeatForAction.passengerDni || 'No registrado'}</p>
+                    <p className="text-teal-400"><strong>Método Pago:</strong> {selectedSeatForAction.paymentMethod?.toUpperCase() || 'EFECTIVO'}</p>
                   </div>
                 )}
               </div>
 
               {selectedSeatForAction.status === 'available' ? (
+                /* Free seat: Sell in window */
                 <div className="space-y-3 pt-1">
                   <p className="text-xs text-slate-300">
-                    ¿Un pasajero pagó en efectivo en el paradero? Márcalo aquí para que nadie en la app lo reserve:
+                    ¿Un pasajero pagó en efectivo en el paradero? Márcalo aquí para bloquearlo al instante:
                   </p>
 
                   <div>
@@ -353,17 +375,19 @@ export const DriverView: React.FC<DriverViewProps> = ({
                   </button>
                 </div>
               ) : (
+                /* Occupied seat: Refund / Cancel option */
                 <div className="space-y-3 pt-1">
-                  <p className="text-xs text-slate-400">
-                    Si el pasajero canceló o no se presentó, puedes liberar este asiento:
+                  <p className="text-xs text-slate-300">
+                    ¿El cliente ya no va a viajar o solicita su dinero de vuelta?
                   </p>
+
                   <button
                     type="button"
-                    onClick={handleReleaseSeat}
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-rose-500/40 text-rose-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    onClick={() => setSeatForRefund(selectedSeatForAction)}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
                   >
-                    <X className="w-4 h-4 text-rose-400" />
-                    <span>Liberar Asiento #{selectedSeatForAction.number}</span>
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Devolver Pasaje & Reembolsar S/. {selectedSeatForAction.price.toFixed(2)}</span>
                   </button>
                 </div>
               )}
@@ -371,22 +395,22 @@ export const DriverView: React.FC<DriverViewProps> = ({
           ) : (
             <div className="bg-slate-950/60 border border-dashed border-slate-800 rounded-2xl p-6 text-center text-slate-400 text-xs">
               <Store className="w-8 h-8 text-rose-400/50 mx-auto mb-2" />
-              <p>Toca cualquier asiento en el croquis para cobrarlo en efectivo por ventanilla o para ver los datos del pasajero.</p>
+              <p>Toca cualquier asiento en el croquis para cobrarlo en ventanilla o tramitar una devolución si el cliente ya no viaja.</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Manifest Table */}
+      {/* Manifest Table with Refund Buttons */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
           <div>
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Users className="w-5 h-5 text-teal-400" />
-              <span>Manifiesto Oficial de Pasajeros a Bordo</span>
+              <span>Lista de Pasajeros & Control de Pasajes</span>
             </h3>
             <p className="text-xs text-slate-400">
-              Listo para fiscalización SUTRAN / Municipal en carretera
+              Visualiza quién abordó, canal de venta o gestiona reembolsos si el cliente canceló su viaje
             </p>
           </div>
 
@@ -407,9 +431,9 @@ export const DriverView: React.FC<DriverViewProps> = ({
                 <th className="py-3 px-3">Asiento</th>
                 <th className="py-3 px-3">Nombre del Pasajero</th>
                 <th className="py-3 px-3">DNI / Doc</th>
-                <th className="py-3 px-3">Canal de Venta</th>
+                <th className="py-3 px-3">Canal de Pago</th>
                 <th className="py-3 px-3">Importe</th>
-                <th className="py-3 px-3">Estado</th>
+                <th className="py-3 px-3">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -438,7 +462,7 @@ export const DriverView: React.FC<DriverViewProps> = ({
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 text-[10px] font-semibold">
-                          App Online ({seat.paymentMethod?.toUpperCase() || 'QR'})
+                          App ({seat.paymentMethod?.toUpperCase() || 'YAPE'})
                         </span>
                       )}
                     </td>
@@ -446,10 +470,15 @@ export const DriverView: React.FC<DriverViewProps> = ({
                       S/. {seat.price.toFixed(2)}
                     </td>
                     <td className="py-3 px-3">
-                      <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold text-[11px]">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Abordado</span>
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSeatForRefund(seat)}
+                        className="py-1 px-2.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-600/50 text-rose-300 hover:text-white text-[11px] font-bold flex items-center gap-1 transition-colors"
+                        title="Reembolsar y liberar este asiento"
+                      >
+                        <RotateCcw className="w-3 h-3 text-rose-400" />
+                        <span>Reembolsar</span>
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -459,12 +488,22 @@ export const DriverView: React.FC<DriverViewProps> = ({
         </div>
       </div>
 
+      {/* QR Scanner Modal */}
       <QRScannerModal
         isOpen={isScannerOpen}
         onClose={() => setIsScannerOpen(false)}
         onScanSuccess={handleQRScanSuccess}
         tickets={tickets}
         currentSeats={currentTrip.seats}
+      />
+
+      {/* Refund Modal */}
+      <RefundModal
+        isOpen={!!seatForRefund}
+        onClose={() => setSeatForRefund(null)}
+        seat={seatForRefund}
+        trip={currentTrip}
+        onConfirmRefund={handleProcessRefund}
       />
     </div>
   )

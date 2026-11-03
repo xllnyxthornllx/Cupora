@@ -33,10 +33,13 @@ export interface Seat {
   status: SeatStatus
   passengerName?: string
   passengerDni?: string
+  passengerPhone?: string
   price: number
   ticketCode?: string
   paymentMethod?: 'yape' | 'plin' | 'card' | 'cash'
-  lockedAt?: number // timestamp
+  lockedAt?: number
+  refunded?: boolean
+  refundedAt?: string
 }
 
 export interface MinivanModel {
@@ -92,7 +95,10 @@ export interface TicketData {
   driverName: string
   departureTime: string
   date: string
-  status: 'valid' | 'boarded' | 'cancelled'
+  status: 'valid' | 'boarded' | 'cancelled' | 'refunded'
+  paymentMethod?: 'yape' | 'plin' | 'card' | 'cash'
   qrPayload: string
   purchasedAt: string
+  refundedAt?: string
+  refundReason?: string
 }
