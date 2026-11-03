@@ -1,151 +1,191 @@
 <p align="center">
-  <img src="public/assets/logo.png" alt="Cupora Logo" width="380">
+  <img src="public/assets/logo.png" alt="Cupora Logo" width="420">
 </p>
 
 <p align="center">
   <strong>Plataforma Integral de Reserva, Control de Aforo y Despacho Interurbano en Tiempo Real</strong>
+  <br>
+  <em>Diseñada a medida para el transporte interurbano en minivanes de Perú (Renault Master, Mercedes-Benz Sprinter, Toyota HiAce)</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript%20%2B%20TailwindCSS-38bdf8?style=for-the-badge&logo=react" alt="React">
-  <img src="https://img.shields.io/badge/PWA-Ready%20%26%20Offline%20First-f59e0b?style=for-the-badge&logo=pwa" alt="PWA">
-  <img src="https://img.shields.io/badge/Architecture-Realtime%20Atomic%20Lock-10b981?style=for-the-badge" alt="Architecture">
-  <img src="https://img.shields.io/badge/QR%20Engine-Offline%20JWT%20Verification-6366f1?style=for-the-badge" alt="QR Engine">
+  <img src="https://img.shields.io/badge/Frontend-React%2018%20%2B%20TypeScript-38bdf8?style=for-the-badge&logo=react" alt="React">
+  <img src="https://img.shields.io/badge/Styling-TailwindCSS-06b6d4?style=for-the-badge&logo=tailwindcss" alt="TailwindCSS">
+  <img src="https://img.shields.io/badge/PWA-Ready%20%26%20Mobile%20First-f59e0b?style=for-the-badge&logo=pwa" alt="PWA">
+  <img src="https://img.shields.io/badge/Pagos%20Móviles-Yape%20%2F%20Plin%20QR-10b981?style=for-the-badge" alt="Yape Plin">
+  <img src="https://img.shields.io/badge/QR%20Engine-Offline%20Camera%20Scanner-6366f1?style=for-the-badge" alt="QR Engine">
+  <img src="https://img.shields.io/badge/Realtime-BroadcastChannel%20Bus-ec4899?style=for-the-badge" alt="BroadcastChannel">
 </p>
 
 ---
 
 ## 🚐 ¿Qué es Cupora?
 
-**Cupora** es una solución de circuito cerrado diseñada específicamente para modernizar y tecnificar el transporte interurbano en minivanes y combis (rutas de media y corta distancia). El sistema resuelve la sobreventa y la falta de trazabilidad en paraderos mediante:
+**Cupora** es una solución tecnológica de circuito cerrado creada para modernizar, ordenar y transparentar la venta de pasajes, el aforo y el despacho de minivanes y combis en rutas interurbanas de media distancia (ej. **Arequipa ➔ Camaná, Mollendo, Moquegua, Pedregal/El Majes**).
 
-1. **Cero Sobreventa (Bloqueo Atómico):** Asignación garantizada de asientos con bloqueo temporal en tiempo real.
-2. **Croquis Interactivo Dinámico:** Mapas de asientos configurables para unidades de **11, 14 y 15 pasajeros**.
-3. **Validación QR 100% Offline:** Boletos electrónicos criptográficamente firmados (JWT) verificables en ruta por el conductor sin necesidad de internet.
-4. **Manifiesto Digital y Despacho:** Control estricto de aforo, control de equipaje, lista oficial de pasajeros y transición de estados operativos (`EMBARCANDO`, `LLENO`, `EN_RUTA`, `FINALIZADO`).
+El sistema erradica la sobreventa en terminales y paraderos informales, digitaliza los manifiestos de pasajeros y permite la validación de boletos QR incluso en tramos de carretera sin cobertura de internet.
 
 ---
 
-## 🧭 Plan de Implementación: De la Demo al Despliegue
+## ✨ Características Principales
 
-Para poder visualizar, validar y presentar el sistema de inmediato **sin necesidad de contratar infraestructura de servidor previa**, el proyecto se desarrollará en dos fases estratégicas:
+### 1. 👤 Experiencia Pasajero (Enfocada en Compra Ágil)
+* **Paso 1: Destino:** Selección intuitiva de la ruta y terminal de salida.
+* **Paso 2: Minivan y Horario:** Selección de la unidad asignada con visualización de placa oficial (`Z4V-753`, `V9P-412`, etc.), conductor, tarifa y asientos libres en vivo.
+* **Paso 3: Croquis Interactivo Realista:** Selección de butaca en un plano vehicular fiel a la realidad con pasadizos despejados.
+* **Paso 4: Checkout con Yape y Plin:** Presentación del **código QR oficial en pantalla**, número de teléfono para transferencia inmediata y confirmación con código de operación.
+* **Paso 5: Boleto Digital QR:** Generación inmediata del pase de abordaje firmado con código QR de alta resolución.
+* **Cajón "Mis Boletos Activos":** Historial de boletos comprados con acceso directo a los códigos QR sin necesidad de reimprimir papel.
 
-### 🌟 Fase 1: Demo Central Interactiva (Web + Multi-Rol PWA)
-Implementación de un entorno web unificado y reactivo con **simulación de tiempo real local** (utilizando `BroadcastChannel`, `LocalStorage` y `Service Workers` para sincronización instantánea entre pestañas):
+### 2. 🧑‍✈️ Cabina del Conductor / Chofer
+* **Aforo en Tiempo Real:** Contador visual de asientos ocupados vs. disponibles.
+* **Manifiesto Digital Oficial:** Tabla con nombres completos, DNI, teléfono, número de asiento y estado de pago de cada pasajero.
+* **Escáner QR con Cámara (100% Offline):** Verificación instantánea de boletos mediante la cámara del celular sin consumir datos móviles.
+* **Venta en Ventanilla Física:** Botón de cobro rápido en efectivo para pasajeros que abordan directamente en el terminal.
+* **Motor de Reembolsos y Devoluciones:** Si un pasajero cancela su viaje, el chofer o despachador puede emitir un reembolso formal con motivo y monto; el asiento se libera automáticamente para que vuelva a estar disponible al instante en la app para todos los usuarios.
+* **Personalizador de la Minivan:** Acceso directo para que el conductor configure y mueva las butacas según las modificaciones reales de su carrocería.
 
-* 🌐 **Landing Page Central:** Presentación corporativa de Cupora, información de rutas, cotizador rápido e invitaciones de descarga PWA.
-* 🎫 **PWA Pasajero:**
-  - Búsqueda de salidas y rutas interurbanas.
-  - Selección de asientos en el croquis interactivo con temporizador de retención (TTL).
-  - Check-in y emisión de boleto con código QR dinámico.
-* 📱 **PWA Conductor / Chofer:**
-  - Escáner de boletos QR con cámara (soporte offline mediante verificación de firma).
-  - Vista del aforo del vehículo en tiempo real.
-  - Manifiesto digital de pasajeros en cabina.
-  - Cambio de estados de despacho del vehículo.
-* 🖥️ **Panel Despacho & Administrador:**
-  - Tablero de control de salidas e itinerarios.
-  - Asignación de conductores y minivanes.
-  - Monitor de ocupación global y arqueo de caja.
-* 🔄 **Selector Rápido de Roles (Modo Demo):** Barra flotante para alternar entre Pasajero, Chofer y Administrador en un solo clic, permitiendo probar la reserva en una ventana y ver la validación en otra simultáneamente.
-
-### 🚀 Fase 2: Backend & Microservicios para Producción
-* **Motor Backend:** API REST + WebSockets (NestJS / FastAPI).
-* **Bloqueo Atómico:** Redis (`SET key value NX EX 480`) para TTL de 8 minutos por asiento.
-* **Persistencia ACID:** PostgreSQL (`SELECT ... FOR UPDATE`) para confirmación de transacciones sin colisiones.
-* **Infraestructura:** Contenedores Docker y despliegue orquestado.
+### 3. 🛠️ Panel de Administración y Despacho
+* **Visión Global de Flota:** Monitoreo simultáneo de múltiples unidades en ruta o embarcando.
+* **Métricas de Recaudación:** Desglose financiero en tiempo real entre ventas vía **App (Yape/Plin)** y ventas en **Ventanilla Física (Efectivo)**.
+* **Constructor de Carrocería de Flota:** Diseñador completo de distribución para cualquier modelo de vehículo.
 
 ---
 
-## 🎨 Identidad Visual y Recursos
+## 🎨 Croquis Realista y Constructor Magnético de Asientos
 
-Los recursos gráficos oficiales se encuentran alojados en [`public/assets/`](public/assets/):
+Las minivanes peruanas poseen carrocerías adaptadas con pasadizos únicos y diferentes cantidades de butacas. Cupora incorpora un motor visual automotriz avanzado:
 
-| Recurso | Archivo | Uso Principal |
+### 🚪 Simulación de las 3 Puertas del Vehículo
+1. **Puerta Chofer:** Puerta batiente frontal izquierda con manija y ángulo de apertura.
+2. **Puerta Copiloto:** Puerta delantera derecha de acceso a las butacas de copiloto.
+3. **Puerta Corrediza (Lateral Derecha):** Representación fiel con riel guía superior, indicador corredizo de subida y **estribo/escalón iluminado** para el abordaje de pasajeros.
+4. **Portón Posterior / Bodega:** Compuerta trasera para la carga de maletas y bultos.
+
+### 📐 Alineación Magnética Inteligente (`✨ Auto-Alinear`)
+* **Pasadizo Natural:** El suelo del vehículo es un espacio abierto continuo; no existen cajas artificiales rotuladas como "Pasadizo".
+* **Guías Magnéticas de Arrastre:** Al mover un asiento por el plano, este se acopla a las líneas de ventana, pasillo y filas.
+* **Botón `Auto-Alinear en Filas Rectas`:** Un clic detecta las posiciones y las ajusta a filas rectas y parejas perfectamente ordenadas y simétricas.
+* **Botón `🔢 Renumerar Asientos`:** Numera de forma secuencial (`#01` a `#N`) de adelante hacia atrás y de izquierda a derecha.
+* **Plantillas Predeterminadas:**
+  - *Renault Master 2.3 dCi* (17 Asientos - 3 Puertas).
+  - *Mercedes-Benz Sprinter 315 Larga* (19 Asientos).
+  - *Toyota HiAce Commuter* (12 Asientos).
+
+### 🔍 Selector Interactivo de Tamaño de Asientos (Zoom)
+Permite adaptar el tamaño visual de los cuadros de asiento tanto en la vista del pasajero como en el panel de diseño:
+* **Chico (S - 48px):** Vista compacta para pantallas pequeñas o unidades con muchas butacas.
+* **Normal (M - 56px):** Proporción estándar equilibrada.
+* **Grande ⭐ (L - 66px - *Predeterminado*):** Asientos amplios y cómodos, con números `#01` en negrita, íconos grandes y tarifas legibles con un solo dedo.
+* **XL (76px):** Máxima accesibilidad y amplitud táctil.
+
+---
+
+## ⚡ Sincronización en Tiempo Real Sin Servidor
+
+Para permitir demostraciones fluidas sin costo de infraestructura previa, Cupora utiliza un **Bus de Sincronización Reactiva**:
+* **`BroadcastChannel API` (`cupora_sync_bus_v4`):** Sincroniza al instante cualquier compra, bloqueo, venta en ventanilla o reembolso entre múltiples pestañas, ventanas y roles abiertos.
+* **Persistencia Reactiva en `localStorage`:** Todos los cambios en la flota, rutas y pasajeros persisten de manera transparente.
+* **Acceso Móvil en Red Local:** El servidor de desarrollo expone la app en la red WiFi (`http://<IP-LOCAL>:5173`) para interactuar desde celulares reales de clientes y choferes en paralelo.
+
+---
+
+## 🎨 Identidad Gráfica
+
+Los activos oficiales del sistema se encuentran en [`public/assets/`](public/assets/):
+
+| Recurso | Archivo | Utilidad |
 | :--- | :--- | :--- |
-| **Logo Completo** | [`public/assets/logo.png`](public/assets/logo.png) | Cabecera del portal web, landing page corporativa, reportes y boletos PDF. |
-| **Isotipo / App Icon** | [`public/assets/icon.png`](public/assets/icon.png) | Favicon del sitio, icono instalable de la PWA (manifest), splash screens y avatares. |
+| **Logo Completo** | [`public/assets/logo.png`](public/assets/logo.png) | Cabecera, landing page corporativa y comprobantes. |
+| **Isotipo / App Icon** | [`public/assets/icon.png`](public/assets/icon.png) | Favicon, icono PWA para pantalla de inicio y avatares. |
 
 ---
 
-## 📂 Estructura del Repositorio
+## 📂 Estructura del Código
 
 ```text
 Cupora/
 ├── public/
-│   └── assets/
-│       ├── logo.png             # Logotipo corporativo completo
-│       └── icon.png             # Isotipo oficial para app y PWA
+│   ├── assets/
+│   │   ├── logo.png             # Logo corporativo Cupora
+│   │   └── icon.png             # Isotipo para app / PWA
+│   ├── favicon.ico
+│   └── manifest.json            # Manifiesto para instalación como PWA
 ├── src/
-│   ├── components/              # Componentes UI (Croquis, QR Scanner, Navbar, Modales)
-│   ├── modules/
-│   │   ├── landing/             # Web central informativa
-│   │   ├── passenger/           # PWA Pasajeros (Reserva, Croquis, Boletos)
-│   │   ├── driver/              # PWA Choferes (Escáner QR, Manifiesto, Despacho)
-│   │   └── admin/               # Panel Administrativo y Despachadores
-│   ├── services/                # Capa de datos (Mock Realtime Sync / BroadcastChannel / API)
-│   ├── types/                   # Tipos TypeScript compartidos (Trip, Seat, Ticket, User)
-│   └── utils/                   # Utilidades criptográficas (JWT offline, generador QR)
-├── backend/                     # (Fase 2) Microservicio API, Redis Locks & Postgres DB
-├── docker-compose.yml           # (Fase 2) Orquestación de infraestructura local
+│   ├── components/
+│   │   ├── MinivanSeatMap.tsx   # Croquis interactivo con 3 puertas, pasadizo y selector de tamaño
+│   │   ├── MinivanLayoutBuilderModal.tsx # Diseñador de carrocería con alineación magnética
+│   │   ├── LoginModal.tsx       # Inicio de sesión con botones de prueba 1-clic (Pasajero, Chofer, Admin)
+│   │   ├── RefundModal.tsx      # Modal de reembolso y liberación inmediata de asientos
+│   │   ├── QRScannerModal.tsx   # Escáner de boletos offline con cámara en tiempo real
+│   │   ├── TicketModal.tsx      # Boleto de viaje digital con código QR de embarque
+│   │   └── Navbar.tsx           # Navegación reactiva adaptada al rol activo
+│   ├── views/
+│   │   ├── PassengerView.tsx    # Flujo de reserva (Destino ➔ Minivan ➔ Asiento ➔ Yape/Plin ➔ Boleto)
+│   │   ├── DriverView.tsx       # Cabina operativa, manifiesto, escáner, ventanilla y reembolsos
+│   │   └── AdminView.tsx        # Dashboard ejecutivo, ingresos (App vs. Ventanilla) y flota
+│   ├── services/
+│   │   └── storageService.ts    # Modelos peruanos, persistencia, bus BroadcastChannel y autenticación
+│   ├── types/
+│   │   └── index.ts             # Definiciones TypeScript (Seat, MinivanModel, Trip, TicketData, UserAccount)
+│   ├── App.tsx                  # Enrutamiento por roles, toasts y listeners globales
+│   ├── main.tsx
+│   └── index.css                # Estilos Tailwind CSS
 ├── package.json
-└── README.md                    # Documentación general del proyecto
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
 ```
 
 ---
 
-## ⚡ Inicio Rápido en Desarrollo Local
+## 🚀 Instalación y Puesta en Marcha Local
 
-### 1. Clonar el repositorio
+### 1. Requisitos Previos
+* **Node.js** (versión 18 o superior recomendada).
+* **npm** o **pnpm**.
+* **Git**.
+
+### 2. Clonar el repositorio
 ```bash
 git clone https://github.com/xllnyxthornllx/Cupora.git
 cd Cupora
 ```
 
-### 2. Instalar dependencias
+### 3. Instalar dependencias
 ```bash
-pnpm install
+npm install
 ```
 
-### 3. Iniciar el entorno de demostración
+### 4. Ejecutar en modo desarrollo
 ```bash
-pnpm run dev
+npm run dev
 ```
-Abre tu navegador en `http://localhost:5173`. Podrás abrir dos ventanas paralelas (una como Pasajero y otra como Conductor/Administrador) para comprobar la reactividad y sincronización de asientos y boletos en vivo.
+
+La aplicación quedará disponible en:
+* **Entorno local:** [http://localhost:5173/](http://localhost:5173/)
+* **Entorno red local (móviles):** `http://<TU_IP_LOCAL>:5173/` (se muestra en la consola al iniciar Vite).
+
+### 5. Compilación para producción (Build Check)
+```bash
+npm run build
+```
+Genera la distribución optimizada y valida que no existan errores de TypeScript ni de empaquetado.
 
 ---
 
-## 🔐 Especificaciones Técnicas Clave
+## 👥 Cuentas de Demostración Rápida (1-Clic)
 
-### Bloqueo Atómico de Asientos
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Pasajero as Pasajero
-    participant Frontend as App Web / PWA
-    participant Engine as Motor de Concurrencia
-    participant State as Estado Compartido
+El sistema incluye un botón de inicio de sesión rápido en la esquina superior derecha con perfiles precargados:
 
-    Pasajero->>Frontend: Selecciona Asiento #4
-    Frontend->>Engine: Solicitar Bloqueo (TTL: 8 min)
-    Engine->>State: Verificar disponibilidad
-    alt Asiento Libre
-        State-->>Engine: Bloqueo Exitoso
-        Engine-->>Frontend: Asiento Reservado (Timer activo)
-        Engine->>State: Notificar cambio a todos los clientes
-    else Asiento Ocupado / En Proceso
-        State-->>Engine: Rechazado
-        Engine-->>Frontend: Error: Asiento no disponible
-    end
-```
-
-### Validación QR Offline
-* **Generación:** Al pagar el boleto, se genera un token cifrado firmado con clave privada que incluye: `trip_id`, `seat_id`, `dni`, `passenger_name` y `timestamp`.
-* **Lectura:** La PWA del conductor valida la firma criptográfica con la clave pública almacenada localmente en la caché de la app, permitiendo verificar la legitimidad del pasaje en plena carretera sin conexión 4G/5G.
+* **👤 Pasajero:** `pasajero@cupora.pe` — Permite reservar asientos, pagar con Yape/Plin y ver sus boletos.
+* **🧑‍✈️ Chofer:** `victor@cupora.pe` — Unidad asignada `Z4V-753` (Renault Master). Accede al manifiesto, escáner QR, ventas en ventanilla, reembolsos y editor de su minivan.
+* **🛠️ Administrador:** `admin@cupora.pe` — Control total de ingresos, flota y configuración general.
 
 ---
 
-## 👥 Equipo y Contribuciones
-
-* **Desarrollador Principal:** [NYXTHORN (@xllnyxthornllx)](https://github.com/xllnyxthornllx)
-* **Licencia:** Proyecto Privado / Propietario.
+<p align="center">
+  Hecho con ❤️ para modernizar el transporte interurbano en el Perú.
+  <br>
+  <strong>Cupora Platform © 2026</strong>
+</p>
