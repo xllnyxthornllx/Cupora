@@ -1,4 +1,4 @@
-import { MinivanModel, RouteOption, Trip, Seat, TicketData } from '../types'
+import { MinivanModel, RouteOption, Trip, Seat, TicketData, LayoutCell } from '../types'
 
 // Default Peruvian interurban routes
 export const DEFAULT_ROUTES: RouteOption[] = [
@@ -44,18 +44,138 @@ export const DEFAULT_ROUTES: RouteOption[] = [
   }
 ]
 
-// Default vehicle configurations (including the real Renault Master from user's photo with plate Z4V-753)
+export function buildDefaultRenaultMasterLayout(): LayoutCell[] {
+  // 5 rows x 4 cols (15 seats + driver + sliding door)
+  const cells: LayoutCell[] = []
+  // Row 0: Driver (0,0), Aisle (0,1), Copilot 1 (0,2), Copilot 2 (0,3)
+  cells.push({ row: 0, col: 0, type: 'driver', label: 'Chofer' })
+  cells.push({ row: 0, col: 1, type: 'aisle' })
+  cells.push({ row: 0, col: 2, type: 'seat', seatNumber: 1, label: '01 Copiloto Centro' })
+  cells.push({ row: 0, col: 3, type: 'seat', seatNumber: 2, label: '02 Copiloto Ventana' })
+
+  // Row 1: Seat 3 (1,0), Seat 4 (1,1), Aisle (1,2), Door (1,3 - Puerta Corrediza Lateral)
+  cells.push({ row: 1, col: 0, type: 'seat', seatNumber: 3, label: '03 Ventana Izquierda' })
+  cells.push({ row: 1, col: 1, type: 'seat', seatNumber: 4, label: '04 Pasillo' })
+  cells.push({ row: 1, col: 2, type: 'aisle' })
+  cells.push({ row: 1, col: 3, type: 'door', label: 'Puerta de Subida' })
+
+  // Row 2: Seat 5 (2,0), Seat 6 (2,1), Aisle (2,2), Seat 7 (2,3)
+  cells.push({ row: 2, col: 0, type: 'seat', seatNumber: 5, label: '05 Ventana Izquierda' })
+  cells.push({ row: 2, col: 1, type: 'seat', seatNumber: 6, label: '06 Pasillo' })
+  cells.push({ row: 2, col: 2, type: 'aisle' })
+  cells.push({ row: 2, col: 3, type: 'seat', seatNumber: 7, label: '07 Ventana Derecha' })
+
+  // Row 3: Seat 8 (3,0), Seat 9 (3,1), Aisle (3,2), Seat 10 (3,3)
+  cells.push({ row: 3, col: 0, type: 'seat', seatNumber: 8, label: '08 Ventana Izquierda' })
+  cells.push({ row: 3, col: 1, type: 'seat', seatNumber: 9, label: '09 Pasillo' })
+  cells.push({ row: 3, col: 2, type: 'aisle' })
+  cells.push({ row: 3, col: 3, type: 'seat', seatNumber: 10, label: '10 Ventana Derecha' })
+
+  // Row 4: Seat 11 (4,0), Seat 12 (4,1), Seat 13 (4,2), Seat 14 (4,3)
+  cells.push({ row: 4, col: 0, type: 'seat', seatNumber: 11, label: '11 Fondo Izquierda' })
+  cells.push({ row: 4, col: 1, type: 'seat', seatNumber: 12, label: '12 Fondo Centro 1' })
+  cells.push({ row: 4, col: 2, type: 'seat', seatNumber: 13, label: '13 Fondo Centro 2' })
+  cells.push({ row: 4, col: 3, type: 'seat', seatNumber: 14, label: '14 Fondo Derecha' })
+
+  // Row 5: Additional seat or luggage space
+  cells.push({ row: 5, col: 0, type: 'seat', seatNumber: 15, label: '15 Asiento Posterior' })
+  cells.push({ row: 5, col: 1, type: 'luggage', label: 'Maletero' })
+  cells.push({ row: 5, col: 2, type: 'luggage', label: 'Maletero' })
+  cells.push({ row: 5, col: 3, type: 'luggage', label: 'Maletero' })
+
+  return cells
+}
+
+export function buildDefaultSprinterLayout(): LayoutCell[] {
+  const cells: LayoutCell[] = []
+  // Row 0: Driver (0,0), Aisle (0,1), Aisle (0,2), Copilot 1 (0,3)
+  cells.push({ row: 0, col: 0, type: 'driver', label: 'Chofer' })
+  cells.push({ row: 0, col: 1, type: 'aisle' })
+  cells.push({ row: 0, col: 2, type: 'aisle' })
+  cells.push({ row: 0, col: 3, type: 'seat', seatNumber: 1, label: '01 Copiloto' })
+
+  // Row 1: Seat 2, 3, Aisle, Door
+  cells.push({ row: 1, col: 0, type: 'seat', seatNumber: 2, label: '02 Ventana Izq' })
+  cells.push({ row: 1, col: 1, type: 'seat', seatNumber: 3, label: '03 Pasillo Izq' })
+  cells.push({ row: 1, col: 2, type: 'aisle' })
+  cells.push({ row: 1, col: 3, type: 'door', label: 'Puerta de Subida' })
+
+  // Row 2: Seat 4, 5, Aisle, Seat 6
+  cells.push({ row: 2, col: 0, type: 'seat', seatNumber: 4, label: '04 Ventana' })
+  cells.push({ row: 2, col: 1, type: 'seat', seatNumber: 5, label: '05 Pasillo' })
+  cells.push({ row: 2, col: 2, type: 'aisle' })
+  cells.push({ row: 2, col: 3, type: 'seat', seatNumber: 6, label: '06 Ventana Der' })
+
+  // Row 3: Seat 7, 8, Aisle, Seat 9
+  cells.push({ row: 3, col: 0, type: 'seat', seatNumber: 7, label: '07 Ventana' })
+  cells.push({ row: 3, col: 1, type: 'seat', seatNumber: 8, label: '08 Pasillo' })
+  cells.push({ row: 3, col: 2, type: 'aisle' })
+  cells.push({ row: 3, col: 3, type: 'seat', seatNumber: 9, label: '09 Ventana Der' })
+
+  // Row 4: Seat 10, 11, Aisle, Seat 12
+  cells.push({ row: 4, col: 0, type: 'seat', seatNumber: 10, label: '10 Ventana' })
+  cells.push({ row: 4, col: 1, type: 'seat', seatNumber: 11, label: '11 Pasillo' })
+  cells.push({ row: 4, col: 2, type: 'aisle' })
+  cells.push({ row: 4, col: 3, type: 'seat', seatNumber: 12, label: '12 Ventana' })
+
+  // Row 5: Back Row (13, 14, 15)
+  cells.push({ row: 5, col: 0, type: 'seat', seatNumber: 13, label: '13 Fondo' })
+  cells.push({ row: 5, col: 1, type: 'seat', seatNumber: 14, label: '14 Fondo' })
+  cells.push({ row: 5, col: 2, type: 'luggage', label: 'Bodega' })
+  cells.push({ row: 5, col: 3, type: 'luggage', label: 'Bodega' })
+
+  return cells
+}
+
+export function buildDefaultHiAceLayout(): LayoutCell[] {
+  const cells: LayoutCell[] = []
+  // Row 0
+  cells.push({ row: 0, col: 0, type: 'driver', label: 'Chofer' })
+  cells.push({ row: 0, col: 1, type: 'aisle' })
+  cells.push({ row: 0, col: 2, type: 'aisle' })
+  cells.push({ row: 0, col: 3, type: 'seat', seatNumber: 1, label: '01 Copiloto' })
+
+  // Row 1
+  cells.push({ row: 1, col: 0, type: 'seat', seatNumber: 2, label: '02 Ventana' })
+  cells.push({ row: 1, col: 1, type: 'aisle' })
+  cells.push({ row: 1, col: 2, type: 'aisle' })
+  cells.push({ row: 1, col: 3, type: 'door', label: 'Puerta Lateral' })
+
+  // Row 2
+  cells.push({ row: 2, col: 0, type: 'seat', seatNumber: 3, label: '03 Ventana' })
+  cells.push({ row: 2, col: 1, type: 'seat', seatNumber: 4, label: '04 Pasillo' })
+  cells.push({ row: 2, col: 2, type: 'aisle' })
+  cells.push({ row: 2, col: 3, type: 'seat', seatNumber: 5, label: '05 Ventana Der' })
+
+  // Row 3
+  cells.push({ row: 3, col: 0, type: 'seat', seatNumber: 6, label: '06 Ventana' })
+  cells.push({ row: 3, col: 1, type: 'seat', seatNumber: 7, label: '07 Pasillo' })
+  cells.push({ row: 3, col: 2, type: 'aisle' })
+  cells.push({ row: 3, col: 3, type: 'seat', seatNumber: 8, label: '08 Ventana Der' })
+
+  // Row 4
+  cells.push({ row: 4, col: 0, type: 'seat', seatNumber: 9, label: '09 Fondo Izq' })
+  cells.push({ row: 4, col: 1, type: 'seat', seatNumber: 10, label: '10 Fondo Centro' })
+  cells.push({ row: 4, col: 2, type: 'aisle' })
+  cells.push({ row: 4, col: 3, type: 'seat', seatNumber: 11, label: '11 Fondo Der' })
+
+  return cells
+}
+
 export const DEFAULT_MODELS: MinivanModel[] = [
   {
     id: 'renault-master-15',
     name: 'Renault Master 2.3 dCi (15 Asientos)',
-    plate: 'Z4V-753', // From user photo!
+    plate: 'Z4V-753', // Photo plate
     totalSeats: 15,
     driverName: 'Víctor "Dios es mi guía" Mamani',
-    rows: 5,
+    rows: 6,
     cols: 4,
-    description: 'Minivan interurbana climatizada, asientos reclinables y portaequipaje posterior.',
-    defaultPrice: 25.0
+    doorRow: 1,
+    doorCol: 3,
+    description: 'Minivan interurbana climatizada, puerta corrediza derecha, maletero posterior.',
+    defaultPrice: 25.0,
+    layoutGrid: buildDefaultRenaultMasterLayout()
   },
   {
     id: 'mercedes-sprinter-14',
@@ -63,10 +183,13 @@ export const DEFAULT_MODELS: MinivanModel[] = [
     plate: 'V9P-412',
     totalSeats: 14,
     driverName: 'Carlos Quispe Huanca',
-    rows: 4,
+    rows: 6,
     cols: 4,
+    doorRow: 1,
+    doorCol: 3,
     description: 'Unidad ejecutiva con cargadores USB y aire forzado.',
-    defaultPrice: 25.0
+    defaultPrice: 25.0,
+    layoutGrid: buildDefaultSprinterLayout()
   },
   {
     id: 'toyota-hiace-11',
@@ -74,93 +197,57 @@ export const DEFAULT_MODELS: MinivanModel[] = [
     plate: 'X3B-819',
     totalSeats: 11,
     driverName: 'Raúl Condori Flores',
-    rows: 4,
-    cols: 3,
+    rows: 5,
+    cols: 4,
+    doorRow: 1,
+    doorCol: 3,
     description: 'Vehículo ágil para rutas rápidas con salida cada 20 minutos.',
-    defaultPrice: 25.0
+    defaultPrice: 25.0,
+    layoutGrid: buildDefaultHiAceLayout()
   }
 ]
 
 export function generateInitialSeats(model: MinivanModel, price: number): Seat[] {
+  // If model has custom layout grid, generate seats strictly from layoutGrid!
+  if (model.layoutGrid && model.layoutGrid.length > 0) {
+    const seatCells = model.layoutGrid.filter(c => c.type === 'seat')
+    return seatCells.map((cell, idx) => {
+      const num = cell.seatNumber ?? (idx + 1)
+      return {
+        id: num,
+        number: num,
+        label: cell.label || `Asiento ${num.toString().padStart(2, '0')}`,
+        row: cell.row,
+        col: cell.col,
+        status: 'available',
+        price: cell.price || price
+      }
+    })
+  }
+
+  // Fallback default 15 seats
   const seats: Seat[] = []
-  
-  if (model.id === 'toyota-hiace-11') {
-    // 11 seats layout
-    // Copilot: seat 1
-    seats.push({ id: 1, number: 1, label: '01 (Copiloto)', row: 0, col: 2, status: 'available', price })
-    // Row 1: 2 seats
-    seats.push({ id: 2, number: 2, label: '02 (Ventana)', row: 1, col: 0, status: 'available', price })
-    seats.push({ id: 3, number: 3, label: '03 (Ventana)', row: 1, col: 2, status: 'available', price })
-    // Row 2: 2 seats
-    seats.push({ id: 4, number: 4, label: '04 (Ventana)', row: 2, col: 0, status: 'available', price })
-    seats.push({ id: 5, number: 5, label: '05 (Ventana)', row: 2, col: 2, status: 'available', price })
-    // Row 3: 2 seats
-    seats.push({ id: 6, number: 6, label: '06 (Ventana)', row: 3, col: 0, status: 'available', price })
-    seats.push({ id: 7, number: 7, label: '07 (Ventana)', row: 3, col: 2, status: 'available', price })
-    // Back row: 4 seats (8, 9, 10, 11)
-    seats.push({ id: 8, number: 8, label: '08 (Fondo)', row: 4, col: 0, status: 'available', price })
-    seats.push({ id: 9, number: 9, label: '09 (Fondo)', row: 4, col: 1, status: 'available', price })
-    seats.push({ id: 10, number: 10, label: '10 (Fondo)', row: 4, col: 2, status: 'available', price })
-    seats.push({ id: 11, number: 11, label: '11 (Fondo)', row: 4, col: 3, status: 'available', price })
-    return seats
+  for (let i = 1; i <= model.totalSeats; i++) {
+    seats.push({
+      id: i,
+      number: i,
+      label: `Asiento ${i.toString().padStart(2, '0')}`,
+      row: Math.floor((i - 1) / 3),
+      col: (i - 1) % 3,
+      status: 'available',
+      price
+    })
   }
-
-  if (model.id === 'mercedes-sprinter-14') {
-    // 14 seats layout
-    // Copilot: 1
-    seats.push({ id: 1, number: 1, label: '01 (Copiloto)', row: 0, col: 2, status: 'available', price })
-    // Row 1: 2 + 1
-    seats.push({ id: 2, number: 2, label: '02 (Ventana)', row: 1, col: 0, status: 'available', price })
-    seats.push({ id: 3, number: 3, label: '03 (Pasillo)', row: 1, col: 1, status: 'available', price })
-    seats.push({ id: 4, number: 4, label: '04 (Ventana)', row: 1, col: 3, status: 'available', price })
-    // Row 2: 2 + 1
-    seats.push({ id: 5, number: 5, label: '05 (Ventana)', row: 2, col: 0, status: 'available', price })
-    seats.push({ id: 6, number: 6, label: '06 (Pasillo)', row: 2, col: 1, status: 'available', price })
-    seats.push({ id: 7, number: 7, label: '07 (Ventana)', row: 2, col: 3, status: 'available', price })
-    // Row 3: 2 + 1
-    seats.push({ id: 8, number: 8, label: '08 (Ventana)', row: 3, col: 0, status: 'available', price })
-    seats.push({ id: 9, number: 9, label: '09 (Pasillo)', row: 3, col: 1, status: 'available', price })
-    seats.push({ id: 10, number: 10, label: '10 (Ventana)', row: 3, col: 3, status: 'available', price })
-    // Back row: 4
-    seats.push({ id: 11, number: 11, label: '11 (Fondo)', row: 4, col: 0, status: 'available', price })
-    seats.push({ id: 12, number: 12, label: '12 (Fondo)', row: 4, col: 1, status: 'available', price })
-    seats.push({ id: 13, number: 13, label: '13 (Fondo)', row: 4, col: 2, status: 'available', price })
-    seats.push({ id: 14, number: 14, label: '14 (Fondo)', row: 4, col: 3, status: 'available', price })
-    return seats
-  }
-
-  // Default: Renault Master (15 Seats)
-  // Front Copilot 1 & 2
-  seats.push({ id: 1, number: 1, label: '01 (Copiloto Centro)', row: 0, col: 2, status: 'available', price })
-  seats.push({ id: 2, number: 2, label: '02 (Copiloto Ventana)', row: 0, col: 3, status: 'available', price })
-  // Row 1: 2 left + 1 right
-  seats.push({ id: 3, number: 3, label: '03 (Ventana Izq)', row: 1, col: 0, status: 'available', price })
-  seats.push({ id: 4, number: 4, label: '04 (Pasillo)', row: 1, col: 1, status: 'available', price })
-  seats.push({ id: 5, number: 5, label: '05 (Ventana Der)', row: 1, col: 3, status: 'available', price })
-  // Row 2: 2 left + 1 right
-  seats.push({ id: 6, number: 6, label: '06 (Ventana Izq)', row: 2, col: 0, status: 'available', price })
-  seats.push({ id: 7, number: 7, label: '07 (Pasillo)', row: 2, col: 1, status: 'available', price })
-  seats.push({ id: 8, number: 8, label: '08 (Ventana Der)', row: 2, col: 3, status: 'available', price })
-  // Row 3: 2 left + 1 right
-  seats.push({ id: 9, number: 9, label: '09 (Ventana Izq)', row: 3, col: 0, status: 'available', price })
-  seats.push({ id: 10, number: 10, label: '10 (Pasillo)', row: 3, col: 1, status: 'available', price })
-  seats.push({ id: 11, number: 11, label: '11 (Ventana Der)', row: 3, col: 3, status: 'available', price })
-  // Row 4 (Back row 4 seats)
-  seats.push({ id: 12, number: 12, label: '12 (Fondo Izq)', row: 4, col: 0, status: 'available', price })
-  seats.push({ id: 13, number: 13, label: '13 (Fondo Centro 1)', row: 4, col: 1, status: 'available', price })
-  seats.push({ id: 14, number: 14, label: '14 (Fondo Centro 2)', row: 4, col: 2, status: 'available', price })
-  seats.push({ id: 15, number: 15, label: '15 (Fondo Der)', row: 4, col: 3, status: 'available', price })
-
   return seats
 }
 
-const STORAGE_KEY_TRIPS = 'cupora_trips_v1'
-const STORAGE_KEY_MODELS = 'cupora_models_v1'
-const STORAGE_KEY_TICKETS = 'cupora_tickets_v1'
+const STORAGE_KEY_TRIPS = 'cupora_trips_v2'
+const STORAGE_KEY_MODELS = 'cupora_models_v2'
+const STORAGE_KEY_TICKETS = 'cupora_tickets_v2'
 
 // Broadcast Channel for live multi-tab synchronization
 const channel = typeof window !== 'undefined' && 'BroadcastChannel' in window 
-  ? new BroadcastChannel('cupora_sync_bus') 
+  ? new BroadcastChannel('cupora_sync_bus_v2') 
   : null
 
 export function broadcastChange(type: string, payload?: any) {
@@ -171,7 +258,6 @@ export function broadcastChange(type: string, payload?: any) {
       console.warn('BroadcastChannel error', e)
     }
   }
-  // Also dispatch a custom event on the current window for local hooks
   window.dispatchEvent(new CustomEvent('cupora_local_update', { detail: { type, payload } }))
 }
 
@@ -201,7 +287,6 @@ export function subscribeToSync(callback: (type: string, payload?: any) => void)
   }
 }
 
-// Storage helpers
 export function getSavedModels(): MinivanModel[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_MODELS)
@@ -221,7 +306,6 @@ export function getSavedTrips(): Trip[] {
     const raw = localStorage.getItem(STORAGE_KEY_TRIPS)
     if (raw) {
       const trips: Trip[] = JSON.parse(raw)
-      // Check and release expired locks (8 minutes TTL)
       const now = Date.now()
       let updated = false
       trips.forEach(t => {
@@ -242,7 +326,6 @@ export function getSavedTrips(): Trip[] {
     }
   } catch (e) {}
 
-  // Initialize initial trips
   const models = getSavedModels()
   const initialTrips: Trip[] = [
     {
@@ -277,15 +360,16 @@ export function getSavedTrips(): Trip[] {
     }
   ]
 
-  // Pre-fill a couple of seats in the first trip to look realistic (1 ventanilla, 1 app)
-  initialTrips[0].seats[0].status = 'sold_window'
-  initialTrips[0].seats[0].passengerName = 'Roberto Quispe (Ventanilla)'
-  initialTrips[0].seats[0].passengerDni = '29481920'
+  if (initialTrips[0].seats.length > 3) {
+    initialTrips[0].seats[0].status = 'sold_window'
+    initialTrips[0].seats[0].passengerName = 'Roberto Quispe (Ventanilla)'
+    initialTrips[0].seats[0].passengerDni = '29481920'
 
-  initialTrips[0].seats[3].status = 'sold_app'
-  initialTrips[0].seats[3].passengerName = 'Maritza Flores Díaz'
-  initialTrips[0].seats[3].passengerDni = '46129845'
-  initialTrips[0].seats[3].ticketCode = 'CUP-753-04'
+    initialTrips[0].seats[2].status = 'sold_app'
+    initialTrips[0].seats[2].passengerName = 'Maritza Flores Díaz'
+    initialTrips[0].seats[2].passengerDni = '46129845'
+    initialTrips[0].seats[2].ticketCode = 'CUP-753-03'
+  }
 
   saveTrips(initialTrips)
   return initialTrips

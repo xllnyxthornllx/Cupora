@@ -1,5 +1,16 @@
 export type SeatStatus = 'available' | 'selected' | 'locked' | 'sold_app' | 'sold_window'
 
+export type CellType = 'seat' | 'aisle' | 'door' | 'driver' | 'luggage'
+
+export interface LayoutCell {
+  row: number
+  col: number
+  type: CellType
+  seatNumber?: number
+  label?: string
+  price?: number
+}
+
 export interface Seat {
   id: number
   number: number
@@ -23,8 +34,11 @@ export interface MinivanModel {
   driverName: string
   rows: number
   cols: number
+  doorRow: number
+  doorCol: number
   description: string
   defaultPrice: number
+  layoutGrid?: LayoutCell[]
 }
 
 export interface RouteOption {

@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { MinivanModel, Trip, TicketData } from '../types'
 import { generateInitialSeats, saveModels, saveTrips } from '../services/storageService'
-import { Shield, Plus, Bus, DollarSign, Users, TrendingUp, CheckCircle, Car } from 'lucide-react'
+import { MinivanLayoutBuilderModal } from '../components/MinivanLayoutBuilderModal'
+import { Shield, Plus, Bus, DollarSign, Users, TrendingUp, Car, Settings2, SlidersHorizontal, DoorOpen, Armchair } from 'lucide-react'
 
 interface AdminViewProps {
   models: MinivanModel[]
@@ -19,6 +20,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
   onUpdateTrips
 }) => {
   const [showAddModelModal, setShowAddModelModal] = useState<boolean>(false)
+  const [modelToCustomize, setModelToCustomize] = useState<MinivanModel | null>(null)
+
   const [newModelName, setNewModelName] = useState<string>('')
   const [newPlate, setNewPlate] = useState<string>('')
   const [newDriver, setNewDriver] = useState<string>('')
@@ -60,8 +63,10 @@ export const AdminView: React.FC<AdminViewProps> = ({
       plate: newPlate.trim().toUpperCase(),
       driverName: newDriver.trim() || 'Conductor Asignado',
       totalSeats: newTotalSeats,
-      rows: 5,
+      rows: 6,
       cols: 4,
+      doorRow: 1,
+      doorCol: 3,
       description: 'Minivan configurada en el sistema de despacho Cupora.',
       defaultPrice: newPrice
     }
@@ -93,6 +98,13 @@ export const AdminView: React.FC<AdminViewProps> = ({
     setShowAddModelModal(false)
   }
 
+  const handleSaveCustomizedModel = (updatedModel: MinivanModel) => {
+    const updated = models.map(m => m.id === updatedModel.id ? updatedModel : m)
+    saveModels(updated)
+    onUpdateModels(updated)
+    setModelToCustomize(null)
+  }
+
   return (
     <div className="space-y-8 pb-16">
       {/* Header Banner */}
@@ -106,7 +118,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             Monitoreo de Flota, Rutas y Arqueo
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Supervisa el estado en tiempo real de todas las minivanes y registra nuevas unidades.
+            Supervisa el estado en tiempo real de todas las minivanes y configura la distribución física de cada vehículo.
           </p>
         </div>
 
@@ -170,17 +182,22 @@ export const AdminView: React.FC<AdminViewProps> = ({
             {models.length} unidades
           </div>
           <p className="text-[11px] text-slate-400 mt-1">
-            Renault, Sprinter, HiAce
+            Personalización de Asientos Activa
           </p>
         </div>
       </div>
 
       {/* Flota Activa Cards */}
       <div className="space-y-4">
-        <h3 className="text-base font-bold text-white flex items-center gap-2">
-          <Car className="w-5 h-5 text-teal-400" />
-          <span>Unidades Minivanes Registradas</span>
-        </h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Car className="w-5 h-5 text-teal-400" />
+            <span>Unidades Minivanes Registradas y Distribución</span>
+          </h3>
+          <span className="text-xs text-teal-400 font-medium">
+            💡 Toca "Mover Asientos & Puertas" para personalizar cada vehículo
+          </span>
+        </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {models.map(model => {
@@ -191,49 +208,58 @@ export const AdminView: React.FC<AdminViewProps> = ({
             return (
               <div
                 key={model.id}
-                className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-6 shadow-xl transition-all space-y-4"
+                className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-3xl p-6 shadow-xl transition-all space-y-4 flex flex-col justify-between"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-slate-950 text-teal-400 border border-slate-800 font-bold">
-                      {model.plate}
-                    </span>
-                    <h4 className="text-base font-bold text-white mt-2">
-                      {model.name}
-                    </h4>
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-slate-950 text-teal-400 border border-slate-800 font-bold">
+                        {model.plate}
+                      </span>
+                      <h4 className="text-base font-bold text-white mt-2">
+                        {model.name}
+                      </h4>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-slate-400 block">Capacidad</span>
+                      <span className="text-sm font-bold text-teal-400">{model.totalSeats} asientos</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs text-slate-400 block">Capacidad</span>
-                    <span className="text-sm font-bold text-teal-400">{model.totalSeats} asientos</span>
+
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {model.description}
+                  </p>
+
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Conductor:</span>
+                    <span className="text-white font-medium">{model.driverName}</span>
+                  </div>
+
+                  {/* Progress bar of occupancy */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-slate-400">Ocupación actual:</span>
+                      <span className="text-teal-400 font-bold">{occupied} / {capacity} asientos</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                      <div
+                        className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
+                        style={{ width: `${(occupied / capacity) * 100}%` }}
+                      ></div>
+                    </div>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  {model.description}
-                </p>
-
-                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Conductor:</span>
-                  <span className="text-white font-medium">{model.driverName}</span>
-                </div>
-
-                {/* Progress bar of occupancy */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-400">Ocupación actual:</span>
-                    <span className="text-teal-400 font-bold">{occupied} / {capacity} asientos</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                    <div
-                      className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
-                      style={{ width: `${(occupied / capacity) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
-                  <span>Tarifa base:</span>
-                  <span className="text-emerald-400 font-bold font-mono">S/. {model.defaultPrice.toFixed(2)}</span>
+                {/* Customizer Button */}
+                <div className="pt-3 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setModelToCustomize(model)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-teal-500/40 text-teal-300 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                  >
+                    <SlidersHorizontal className="w-4 h-4 text-teal-400" />
+                    <span>Mover Asientos & Puertas</span>
+                  </button>
                 </div>
               </div>
             )
@@ -290,7 +316,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
 
                 <div>
                   <label className="block text-slate-300 font-medium mb-1">
-                    Capacidad de Asientos *
+                    Capacidad Inicial de Asientos
                   </label>
                   <select
                     value={newTotalSeats}
@@ -348,6 +374,18 @@ export const AdminView: React.FC<AdminViewProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Minivan Layout Builder Modal */}
+      {modelToCustomize && (
+        <MinivanLayoutBuilderModal
+          isOpen={!!modelToCustomize}
+          onClose={() => setModelToCustomize(null)}
+          modelToEdit={modelToCustomize}
+          onSaveModel={handleSaveCustomizedModel}
+          trips={trips}
+          onUpdateTrips={onUpdateTrips}
+        />
       )}
     </div>
   )

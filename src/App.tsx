@@ -12,7 +12,7 @@ import {
   resetDemoData 
 } from './services/storageService'
 import { Trip, MinivanModel, TicketData } from './types'
-import { Shield, Sparkles, MapPin, Phone, Mail, Zap } from 'lucide-react'
+import { Shield, Sparkles, MapPin, Zap, Smartphone, Check, ArrowDownToLine } from 'lucide-react'
 
 export function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('landing')
@@ -20,6 +20,7 @@ export function App() {
   const [models, setModels] = useState<MinivanModel[]>([])
   const [tickets, setTickets] = useState<TicketData[]>([])
   const [syncToast, setSyncToast] = useState<string | null>(null)
+  const [showPwaBanner, setShowPwaBanner] = useState<boolean>(true)
 
   // Load initial data
   const loadAllData = () => {
@@ -36,6 +37,9 @@ export function App() {
       loadAllData()
       if (type === 'TRIPS_UPDATED') {
         setSyncToast('⚡ Sincronización en vivo: Los asientos y aforo se actualizaron.')
+        setTimeout(() => setSyncToast(null), 3500)
+      } else if (type === 'MODELS_UPDATED') {
+        setSyncToast('🚐 Se actualizó la distribución de asientos de la minivan.')
         setTimeout(() => setSyncToast(null), 3500)
       } else if (type === 'DEMO_RESET') {
         setSyncToast('🔄 Datos de demostración restaurados.')
@@ -54,7 +58,7 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-teal-500 selection:text-white">
+    <div className="min-h-[100dvh] flex flex-col bg-slate-950 text-slate-100 font-sans selection:bg-teal-500 selection:text-white antialiased">
       {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
@@ -64,14 +68,38 @@ export function App() {
 
       {/* Floating Sync Notification Toast */}
       {syncToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-teal-500/50 text-teal-300 text-xs px-4 py-3 rounded-2xl shadow-2xl shadow-teal-500/20 flex items-center gap-2 animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 bg-slate-900 border border-teal-500/60 text-teal-300 text-xs px-4 py-3 rounded-2xl shadow-2xl shadow-teal-500/20 flex items-center gap-2 animate-in slide-in-from-bottom-5 backdrop-blur-xl">
           <Zap className="w-4 h-4 text-teal-400 animate-pulse" />
           <span>{syncToast}</span>
         </div>
       )}
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      {/* Optional Mobile PWA Install / Ready Banner */}
+      {showPwaBanner && (
+        <div className="bg-gradient-to-r from-teal-950/80 via-slate-950 to-emerald-950/80 border-b border-teal-500/20 px-4 py-2.5">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-slate-300">
+              <span className="w-6 h-6 rounded-lg bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400 shrink-0">
+                <Smartphone className="w-3.5 h-3.5" />
+              </span>
+              <span>
+                <strong>PWA Móvil Cupora:</strong> Diseñado para funcionar 100% en teléfonos Android & iOS.
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowPwaBanner(false)}
+              className="text-slate-500 hover:text-slate-300 text-xs shrink-0 px-2 py-0.5 rounded-lg hover:bg-slate-800"
+            >
+              ✕ Ocultar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Container (Padded for mobile bottom bar) */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-28 md:pb-14">
         {activeTab === 'landing' && <LandingView onNavigate={setActiveTab} />}
         {activeTab === 'passenger' && (
           <PassengerView
@@ -100,7 +128,7 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-10 text-xs text-slate-400 mt-auto">
+      <footer className="border-t border-slate-900 bg-slate-950/80 py-10 text-xs text-slate-400 mt-auto hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <img src="/assets/icon.png" alt="Cupora Icon" className="w-7 h-7 object-contain" />
