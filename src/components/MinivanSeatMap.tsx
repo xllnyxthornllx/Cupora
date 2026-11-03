@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Seat, MinivanModel, FreeformLayoutItem, SeatScale } from '../types'
-import { Armchair, DoorOpen, Luggage, Maximize2, Sliders } from 'lucide-react'
+import { Armchair, DoorOpen, Luggage, LayoutGrid, Bus, Sliders, Check } from 'lucide-react'
 
 interface MinivanSeatMapProps {
   seats: Seat[]
@@ -11,66 +11,6 @@ interface MinivanSeatMapProps {
   model: MinivanModel
 }
 
-// Visual dimensions specification with mobile-first responsive scaling
-const SCALE_CONFIG = {
-  sm: {
-    containerHeight: 'h-[490px] sm:h-[580px]',
-    seatSize: 'w-[44px] h-[44px] sm:w-12 sm:h-12', // 44px mobile, 48px desktop
-    seatRadius: 'rounded-xl',
-    iconSize: 'w-3 h-3 sm:w-3.5 sm:h-3.5',
-    seatText: 'text-[10px] sm:text-[11px]',
-    priceText: 'text-[8px]',
-    driverSize: 'w-[44px] h-[44px] sm:w-12 sm:h-12',
-    driverWheel: 'w-4 h-4 sm:w-5 sm:h-5',
-    doorSliding: 'w-[46px] h-[46px] sm:w-14 sm:h-14',
-    doorCab: 'w-[40px] h-[36px] sm:w-12 sm:h-10',
-    doorRear: 'w-22 h-6 sm:w-26 sm:h-6',
-    luggage: 'w-12 h-7 sm:w-14 sm:h-9'
-  },
-  md: {
-    containerHeight: 'h-[520px] sm:h-[630px]',
-    seatSize: 'w-[48px] h-[48px] sm:w-14 sm:h-14', // 48px mobile, 56px desktop
-    seatRadius: 'rounded-xl sm:rounded-2xl',
-    iconSize: 'w-3.5 h-3.5 sm:w-4 sm:h-4',
-    seatText: 'text-xs font-bold',
-    priceText: 'text-[8px] sm:text-[9px]',
-    driverSize: 'w-[48px] h-[48px] sm:w-14 sm:h-14',
-    driverWheel: 'w-5 h-5 sm:w-6 sm:h-6',
-    doorSliding: 'w-[50px] h-[50px] sm:w-16 sm:h-16',
-    doorCab: 'w-[44px] h-[38px] sm:w-13 sm:h-11',
-    doorRear: 'w-24 h-6 sm:w-28 sm:h-7',
-    luggage: 'w-14 h-8 sm:w-16 sm:h-10'
-  },
-  lg: { // Default / Prime Peruvian Minivan (Comfortable & Generous on Phone and PC)
-    containerHeight: 'h-[560px] sm:h-[680px]',
-    seatSize: 'w-[54px] h-[54px] sm:w-[68px] sm:h-[68px]', // 54px mobile, 68px desktop
-    seatRadius: 'rounded-2xl',
-    iconSize: 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5',
-    seatText: 'text-xs sm:text-sm font-black',
-    priceText: 'text-[8px] sm:text-[10px] font-bold',
-    driverSize: 'w-[54px] h-[54px] sm:w-[68px] sm:h-[68px]',
-    driverWheel: 'w-5 h-5 sm:w-7 sm:h-7',
-    doorSliding: 'w-[54px] h-[54px] sm:w-18 sm:h-18',
-    doorCab: 'w-[46px] h-[40px] sm:w-14 sm:h-12',
-    doorRear: 'w-28 h-7 sm:w-34 sm:h-8',
-    luggage: 'w-16 h-9 sm:w-20 sm:h-11'
-  },
-  xl: { // Extra Grande / High Accessibility
-    containerHeight: 'h-[600px] sm:h-[750px]',
-    seatSize: 'w-[58px] h-[58px] sm:w-[76px] sm:h-[76px]', // 58px mobile, 76px desktop
-    seatRadius: 'rounded-2xl',
-    iconSize: 'w-4 h-4 sm:w-5 sm:h-5',
-    seatText: 'text-xs sm:text-base font-black',
-    priceText: 'text-[9px] sm:text-xs font-bold',
-    driverSize: 'w-[58px] h-[58px] sm:w-[76px] sm:h-[76px]',
-    driverWheel: 'w-6 h-6 sm:w-8 sm:h-8',
-    doorSliding: 'w-[58px] h-[58px] sm:w-20 sm:h-20',
-    doorCab: 'w-[50px] h-[44px] sm:w-16 sm:h-14',
-    doorRear: 'w-32 h-8 sm:w-38 sm:h-9',
-    luggage: 'w-18 h-10 sm:w-24 sm:h-12'
-  }
-}
-
 export const MinivanSeatMap: React.FC<MinivanSeatMapProps> = ({
   seats,
   selectedSeatId,
@@ -79,21 +19,27 @@ export const MinivanSeatMap: React.FC<MinivanSeatMapProps> = ({
   onDriverSeatAction,
   model
 }) => {
-  // Configurable scale: default to 'lg' (spacious and clear)
   const [scale, setScale] = useState<SeatScale>(model.seatScale || 'lg')
+  const [viewMode, setViewMode] = useState<'blueprint' | 'grid'>('blueprint')
 
-  // Update scale if the model updates its scale preference
   useEffect(() => {
     if (model.seatScale) {
       setScale(model.seatScale)
     }
   }, [model.seatScale])
 
-  const currentCfg = SCALE_CONFIG[scale]
+  // Scale multiplier for fluid container query units
+  const scaleMultipliers: Record<SeatScale, number> = {
+    sm: 0.88,
+    md: 1.0,
+    lg: 1.14,
+    xl: 1.28
+  }
+  const mult = scaleMultipliers[scale]
 
   const getSeatColor = (seat: Seat) => {
     if (selectedSeatId === seat.id) {
-      return 'bg-gradient-to-br from-teal-400 via-teal-500 to-emerald-600 text-white shadow-xl shadow-teal-500/50 ring-4 ring-white scale-105 z-20'
+      return 'bg-gradient-to-br from-teal-400 via-teal-500 to-emerald-600 text-white shadow-xl shadow-teal-500/50 ring-2 sm:ring-4 ring-white scale-105 z-20'
     }
 
     switch (seat.status) {
@@ -132,249 +78,315 @@ export const MinivanSeatMap: React.FC<MinivanSeatMapProps> = ({
     : []
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[480px] sm:max-w-[530px] mx-auto select-none">
-      {/* Interactive Size & Zoom Control Bar */}
-      <div className="w-full flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl px-3.5 py-2 mb-3 shadow-lg backdrop-blur-md">
-        <div className="flex items-center gap-2 text-xs text-slate-300 font-semibold">
-          <Sliders className="w-4 h-4 text-teal-400" />
-          <span className="hidden sm:inline">Tamaño de Asientos:</span>
-          <span className="sm:hidden">Tamaño:</span>
+    <div className="flex flex-col items-center w-full max-w-[390px] sm:max-w-[450px] mx-auto select-none">
+      {/* Top Controller Bar: View Mode & Size Selector */}
+      <div className="w-full flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl px-2.5 sm:px-3.5 py-1.5 mb-2.5 shadow-md backdrop-blur-md gap-2">
+        {/* Toggle between Proportional Blueprint and Quick Grid */}
+        <div className="flex items-center gap-1 bg-slate-950 p-0.5 sm:p-1 rounded-xl border border-slate-800">
+          <button
+            type="button"
+            onClick={() => setViewMode('blueprint')}
+            className={`px-2 py-1 rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-1 transition-all ${
+              viewMode === 'blueprint'
+                ? 'bg-teal-500 text-slate-950 shadow font-black'
+                : 'text-slate-400 hover:text-white'
+            }`}
+            title="Vista de Croquis Automotriz Adaptado"
+          >
+            <Bus className="w-3 h-3" />
+            <span>Croquis</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('grid')}
+            className={`px-2 py-1 rounded-lg text-[10px] sm:text-xs font-bold flex items-center gap-1 transition-all ${
+              viewMode === 'grid'
+                ? 'bg-teal-500 text-slate-950 shadow font-black'
+                : 'text-slate-400 hover:text-white'
+            }`}
+            title="Vista de Cuadrícula Rápida"
+          >
+            <LayoutGrid className="w-3 h-3" />
+            <span>Lista</span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        {/* Size Scale Selector */}
+        <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-950 p-0.5 sm:p-1 rounded-xl border border-slate-800">
           <button
             type="button"
             onClick={() => setScale('sm')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-              scale === 'sm'
-                ? 'bg-teal-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
+              scale === 'sm' ? 'bg-teal-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
             }`}
-            title="Tamaño Chico / Compacto"
           >
-            Chico
+            S
           </button>
           <button
             type="button"
             onClick={() => setScale('md')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-              scale === 'md'
-                ? 'bg-teal-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
+              scale === 'md' ? 'bg-teal-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
             }`}
-            title="Tamaño Normal / Estándar"
           >
-            Normal
+            M
           </button>
           <button
             type="button"
             onClick={() => setScale('lg')}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-              scale === 'lg'
-                ? 'bg-teal-500 text-slate-950 shadow-md font-black ring-1 ring-teal-300'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
+              scale === 'lg' ? 'bg-teal-500 text-slate-950 font-black ring-1 ring-teal-300' : 'text-slate-400 hover:text-white'
             }`}
-            title="Tamaño Grande y Cómodo (Predeterminado)"
           >
-            Grande ⭐
+            L ⭐
           </button>
           <button
             type="button"
             onClick={() => setScale('xl')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-              scale === 'xl'
-                ? 'bg-teal-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${
+              scale === 'xl' ? 'bg-teal-500 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
             }`}
-            title="Tamaño Extra Grande"
           >
             XL
           </button>
         </div>
       </div>
 
-      {/* Minivan Vehicle Frame Container */}
-      <div className="w-full bg-slate-900/95 rounded-3xl p-2 sm:p-5 border-2 border-slate-800 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-transparent via-teal-500/80 to-transparent"></div>
+      {/* Main Vehicle Chassis Frame */}
+      <div className="w-full bg-slate-900/95 rounded-2xl sm:rounded-3xl p-2 sm:p-3.5 border-2 border-slate-800 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-teal-500/80 to-transparent"></div>
 
-        {/* Front Windshield Header with Realistic Cabin Hood */}
-        <div className="relative mb-3 pb-2 border-b border-slate-800">
-          <div className="h-12 w-full bg-slate-950 rounded-t-2xl border border-slate-800 flex items-center justify-between px-4 relative overflow-hidden">
-            <span className="text-[11px] font-bold tracking-widest uppercase text-slate-300 flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse"></span>
-              Cabina y Parabrisas Frontal
+        {/* Front Windshield Header with Plate */}
+        <div className="relative mb-2 pb-1.5 border-b border-slate-800">
+          <div className="h-10 w-full bg-slate-950 rounded-t-xl border border-slate-800 flex items-center justify-between px-3 relative overflow-hidden">
+            <span className="text-[10px] font-bold tracking-widest uppercase text-slate-300 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+              Cabina y Parabrisas
             </span>
-            <span className="text-xs font-mono font-bold text-teal-400 bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+            <span className="text-[11px] font-mono font-bold text-teal-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
               {model.plate}
             </span>
           </div>
         </div>
 
-        {/* Realistic Minivan Floor Plan with Responsive Height */}
-        <div className={`relative w-full ${currentCfg.containerHeight} bg-slate-950 rounded-2xl border border-slate-800/90 overflow-hidden shadow-inner p-2 transition-all duration-200`}>
-          {/* Subtle vehicle rubber floor texture */}
+        {/* VIEW 1: PROPORTIONAL AUTOMOTIVE FLUID BLUEPRINT */}
+        {viewMode === 'blueprint' ? (
           <div 
-            className="absolute inset-0 opacity-15 pointer-events-none"
+            className="relative w-full aspect-[380/580] bg-slate-950 rounded-xl sm:rounded-2xl border border-slate-800/90 shadow-inner p-1 overflow-hidden transition-all [container-type:inline-size]"
             style={{
-              backgroundImage: 'radial-gradient(circle, #38bdf8 1.2px, transparent 1.2px)',
-              backgroundSize: '24px 24px'
+              backgroundImage: 'radial-gradient(circle, #38bdf8 1px, transparent 1px)',
+              backgroundSize: '20px 20px'
             }}
-          />
-
-          {/* Render All Realistic Elements (Seats, 3 Doors, Driver, Luggage) */}
-          {freeformItems.map((item) => {
-            // Driver Steering Wheel Cabin Seat
-            if (item.type === 'driver') {
-              return (
-                <div
-                  key={item.id}
-                  className={`absolute flex flex-col items-center justify-center ${currentCfg.driverSize} rounded-2xl bg-slate-900 border-2 border-slate-700 text-slate-300 shadow-xl -translate-x-1/2 -translate-y-1/2 z-10 transition-all`}
-                  style={{ left: `${item.x}%`, top: `${item.y}%` }}
-                >
-                  <div className={`${currentCfg.driverWheel} rounded-full border-2 border-slate-400 flex items-center justify-center mb-0.5 shadow-inner`}>
-                    <div className="w-2 h-2 rounded-full bg-slate-300"></div>
-                  </div>
-                  <span className="text-[9px] font-black uppercase text-slate-200 tracking-wider">Chofer</span>
-                </div>
-              )
-            }
-
-            // Doors: 3 Distinct Door Types
-            if (item.type === 'door') {
-              // 1. Sliding Door (Puerta Corrediza lateral de pasajeros)
-              if (item.doorType === 'sliding') {
+          >
+            {/* Render All Elements with Container Query Units (cqi) */}
+            {freeformItems.map((item) => {
+              // 1. Driver Steering Wheel Cabin
+              if (item.type === 'driver') {
+                const driverSize = `${14.5 * mult}cqi`
                 return (
                   <div
                     key={item.id}
-                    className={`absolute flex flex-col items-center justify-center ${currentCfg.doorSliding} rounded-2xl bg-teal-950/85 border-2 border-dashed border-teal-400 text-teal-300 shadow-xl shadow-teal-500/10 -translate-x-1/2 -translate-y-1/2 z-10 transition-all`}
-                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                    className="absolute flex flex-col items-center justify-center rounded-xl bg-slate-900 border-2 border-slate-700 text-slate-300 shadow-xl -translate-x-1/2 -translate-y-1/2 z-10 transition-all"
+                    style={{
+                      left: `${item.x}%`,
+                      top: `${item.y}%`,
+                      width: driverSize,
+                      height: driverSize
+                    }}
                   >
-                    <DoorOpen className={`${currentCfg.iconSize} text-teal-300 mb-0.5 animate-pulse`} />
-                    <span className="text-[8px] font-black uppercase tracking-wider text-teal-300 leading-tight">Corrediza</span>
-                    <span className="text-[8px] text-teal-400 font-semibold">Subida</span>
+                    <div className="w-[4.2cqi] h-[4.2cqi] rounded-full border-2 border-slate-300 flex items-center justify-center mb-0.5">
+                      <div className="w-[1.2cqi] h-[1.2cqi] rounded-full bg-slate-300"></div>
+                    </div>
+                    <span className="text-[2.6cqi] font-black uppercase text-slate-200 tracking-wider leading-none">Chofer</span>
                   </div>
                 )
               }
 
-              // 2. Front Right Door (Puerta Copiloto)
-              if (item.doorType === 'front_right') {
+              // 2. The Vehicle Doors (Corrediza, Cabina y Trasera)
+              if (item.type === 'door') {
+                if (item.doorType === 'rear') {
+                  return (
+                    <div
+                      key={item.id}
+                      className="absolute flex items-center justify-center rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-[2.5cqi] font-bold gap-1 -translate-x-1/2 -translate-y-1/2 z-10 transition-all"
+                      style={{
+                        left: `${item.x}%`,
+                        top: `${item.y}%`,
+                        width: `${26 * mult}cqi`,
+                        height: `${6 * mult}cqi`
+                      }}
+                    >
+                      <Luggage className="w-[3cqi] h-[3cqi] text-teal-400 shrink-0" />
+                      <span className="truncate">Portón Trasero</span>
+                    </div>
+                  )
+                }
+
+                // Sliding Passenger Door (Right side with step indicator)
+                if (item.doorType === 'sliding') {
+                  const doorSize = `${15 * mult}cqi`
+                  return (
+                    <div
+                      key={item.id}
+                      className="absolute flex flex-col items-center justify-center rounded-xl bg-teal-950/90 border-2 border-dashed border-teal-400 text-teal-300 shadow-xl shadow-teal-500/10 -translate-x-1/2 -translate-y-1/2 z-10 transition-all"
+                      style={{
+                        left: `${item.x}%`,
+                        top: `${item.y}%`,
+                        width: doorSize,
+                        height: doorSize
+                      }}
+                    >
+                      <DoorOpen className="w-[3.6cqi] h-[3.6cqi] text-teal-300 mb-0.5 animate-pulse" />
+                      <span className="text-[2.4cqi] font-black uppercase tracking-wider text-teal-300 leading-none">Corrediza</span>
+                      <span className="text-[2.4cqi] text-teal-400 font-semibold leading-none mt-0.5">Subida</span>
+                    </div>
+                  )
+                }
+
+                // Front Doors (Copiloto & Chofer Swing Doors)
+                const isCopilot = item.doorType === 'front_right'
+                const cabDoorWidth = `${12.5 * mult}cqi`
+                const cabDoorHeight = `${10 * mult}cqi`
+
                 return (
                   <div
                     key={item.id}
-                    className={`absolute flex flex-col items-center justify-center ${currentCfg.doorCab} rounded-xl bg-slate-900 border border-teal-500/60 text-teal-300 shadow -translate-x-1/2 -translate-y-1/2 z-10 transition-all`}
-                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
-                    title="Puerta del Copiloto (Batiente)"
+                    className="absolute flex flex-col items-center justify-center rounded-lg bg-slate-900 border border-teal-500/50 text-teal-300 shadow -translate-x-1/2 -translate-y-1/2 z-10 transition-all"
+                    style={{
+                      left: `${item.x}%`,
+                      top: `${item.y}%`,
+                      width: cabDoorWidth,
+                      height: cabDoorHeight
+                    }}
+                    title={isCopilot ? 'Puerta Copiloto' : 'Puerta Chofer'}
                   >
-                    <span className="text-[8px] font-black text-teal-300 uppercase leading-none">Puerta</span>
-                    <span className="text-[7px] text-slate-400 font-medium mt-0.5">Copiloto</span>
+                    <span className="text-[2.4cqi] font-black text-slate-300 uppercase leading-none">Puerta</span>
+                    <span className="text-[2.2cqi] text-slate-400 font-semibold mt-0.5 leading-none">
+                      {isCopilot ? 'Copiloto' : 'Chofer'}
+                    </span>
                   </div>
                 )
               }
 
-              // 3. Front Left Door (Puerta Chofer)
-              if (item.doorType === 'front_left') {
+              if (item.type === 'luggage') {
                 return (
                   <div
                     key={item.id}
-                    className={`absolute flex flex-col items-center justify-center ${currentCfg.doorCab} rounded-xl bg-slate-900 border border-slate-700 text-slate-300 shadow -translate-x-1/2 -translate-y-1/2 z-10 transition-all`}
-                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
-                    title="Puerta del Chofer (Batiente)"
+                    className="absolute flex items-center justify-center rounded-lg bg-amber-950/40 border border-amber-700/60 text-amber-300 text-[2.4cqi] font-bold gap-1 -translate-x-1/2 -translate-y-1/2 shadow"
+                    style={{
+                      left: `${item.x}%`,
+                      top: `${item.y}%`,
+                      width: `${16 * mult}cqi`,
+                      height: `${8 * mult}cqi`
+                    }}
                   >
-                    <span className="text-[8px] font-black text-slate-300 uppercase leading-none">Puerta</span>
-                    <span className="text-[7px] text-slate-400 font-medium mt-0.5">Chofer</span>
+                    <Luggage className="w-[3cqi] h-[3cqi]" />
+                    <span>Maletero</span>
                   </div>
                 )
               }
 
-              // 4. Rear Luggage Door (Portón Posterior)
+              // 4. Passenger Seats (Fluid Proportional Scaling)
+              const seat = seats.find(s => s.number === item.seatNumber) || 
+                           seats.find(s => s.id === item.seatNumber)
+
+              if (!seat) return null
+
+              const seatDim = `${14.5 * mult}cqi`
+
               return (
-                <div
+                <button
                   key={item.id}
-                  className={`absolute flex items-center justify-center ${currentCfg.doorRear} rounded-xl bg-slate-900 border border-slate-700 text-slate-300 text-[9px] font-bold gap-1.5 -translate-x-1/2 -translate-y-1/2 z-10 transition-all`}
-                  style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                  type="button"
+                  onClick={() => handleSeatClick(seat)}
+                  className={`absolute rounded-xl sm:rounded-2xl flex flex-col items-center justify-center transition-all duration-150 -translate-x-1/2 -translate-y-1/2 ${getSeatColor(seat)}`}
+                  style={{
+                    left: `${item.x}%`,
+                    top: `${item.y}%`,
+                    width: seatDim,
+                    height: seatDim
+                  }}
+                  title={`${seat.label} - S/. ${seat.price.toFixed(2)}`}
                 >
-                  <Luggage className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Portón Trasero / Bodega</span>
-                </div>
-              )
-            }
-
-            if (item.type === 'luggage') {
-              return (
-                <div
-                  key={item.id}
-                  className={`absolute flex items-center justify-center ${currentCfg.luggage} rounded-xl bg-amber-950/40 border border-amber-700/60 text-amber-300 text-[9px] font-bold gap-1 -translate-x-1/2 -translate-y-1/2 shadow transition-all`}
-                  style={{ left: `${item.x}%`, top: `${item.y}%` }}
-                >
-                  <Luggage className="w-3.5 h-3.5" />
-                  <span>Maletero</span>
-                </div>
-              )
-            }
-
-            // It's a Seat!
-            const seat = seats.find(s => s.number === item.seatNumber) || 
-                         seats.find(s => s.id === item.seatNumber)
-
-            if (!seat) return null
-
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleSeatClick(seat)}
-                className={`absolute ${currentCfg.seatSize} ${currentCfg.seatRadius} flex flex-col items-center justify-center transition-all duration-150 -translate-x-1/2 -translate-y-1/2 ${getSeatColor(seat)}`}
-                style={{ left: `${item.x}%`, top: `${item.y}%` }}
-                title={`${seat.label} - S/. ${seat.price.toFixed(2)}`}
-              >
-                <div className="flex items-center justify-center gap-0.5 sm:gap-1 leading-none mb-0.5">
-                  <Armchair className={`${currentCfg.iconSize} shrink-0`} />
-                  <span className={`${currentCfg.seatText} font-mono tracking-tight font-black leading-none`}>
-                    #{seat.number.toString().padStart(2, '0')}
+                  <div className="flex items-center justify-center gap-0.5 leading-none mb-0.5">
+                    <Armchair className="w-[3.6cqi] h-[3.6cqi] shrink-0" />
+                    <span className="font-mono font-black text-[3.4cqi] tracking-tight leading-none">
+                      #{seat.number.toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <span className="text-[2.5cqi] font-bold opacity-90 truncate max-w-[12cqi] leading-tight">
+                    {seat.status === 'available'
+                      ? `S/.${seat.price.toFixed(0)}`
+                      : seat.status === 'sold_window'
+                      ? 'Ventanilla'
+                      : seat.status === 'sold_app'
+                      ? 'Vendido'
+                      : 'Bloqueado'}
                   </span>
-                </div>
-                <span className={`${currentCfg.priceText} opacity-90 truncate max-w-[48px] sm:max-w-[56px] leading-tight font-semibold`}>
-                  {seat.status === 'available'
-                    ? `S/.${seat.price.toFixed(0)}`
-                    : seat.status === 'sold_window'
-                    ? 'Ventanilla'
-                    : seat.status === 'sold_app'
-                    ? 'Vendido'
-                    : 'Bloqueado'}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          /* VIEW 2: ACCESSIBLE QUICK GRID MATRIX (Ideal for small phones) */
+          <div className="bg-slate-950 rounded-xl p-3 border border-slate-800">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {seats.map(seat => {
+                const isSelected = selectedSeatId === seat.id
+                return (
+                  <button
+                    key={seat.id}
+                    type="button"
+                    onClick={() => handleSeatClick(seat)}
+                    className={`p-2.5 rounded-xl flex flex-col items-center justify-center transition-all text-xs border ${
+                      isSelected
+                        ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold ring-2 ring-white shadow-lg'
+                        : seat.status === 'available'
+                        ? 'bg-slate-900 border-slate-800 hover:border-teal-500 text-white'
+                        : seat.status === 'sold_window'
+                        ? 'bg-rose-950/70 border-rose-800/60 text-rose-300'
+                        : 'bg-indigo-950/70 border-indigo-800/60 text-indigo-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1 font-mono font-bold text-sm">
+                      <Armchair className="w-3.5 h-3.5" />
+                      <span>#{seat.number.toString().padStart(2, '0')}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-0.5 truncate max-w-full">
+                      {seat.status === 'available' ? `S/. ${seat.price.toFixed(2)}` : seat.status === 'sold_window' ? 'Ventanilla' : 'Vendido'}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
-        {/* Real-time Aforo and Legend */}
-        <div className="w-full mt-4 bg-slate-900/70 border border-slate-800 rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center justify-between text-xs mb-3 font-semibold">
-            <span className="text-slate-400">Control de Aforo en Vivo:</span>
-            <span className="text-teal-400 font-bold bg-teal-950/60 px-3 py-1 rounded-full border border-teal-800">
-              {occupiedCount} / {total} Asientos Ocupados ({availableCount} Libres)
+        {/* Live Aforo Counter & Simple Legend */}
+        <div className="w-full mt-3 bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 shadow">
+          <div className="flex items-center justify-between text-[11px] mb-2 font-semibold">
+            <span className="text-slate-400">Aforo:</span>
+            <span className="text-teal-300 font-bold bg-teal-950/80 px-2.5 py-0.5 rounded-full border border-teal-800">
+              {occupiedCount}/{total} Ocupados ({availableCount} Libres)
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px]">
-            <div className="flex items-center gap-2 text-slate-300">
-              <span className="w-4 h-4 rounded-md bg-slate-800 border-2 border-emerald-500/80 inline-block shrink-0 shadow"></span>
-              <span>Disponible</span>
+          <div className="grid grid-cols-4 gap-1 text-[10px] text-center">
+            <div className="flex items-center justify-center gap-1 text-slate-300">
+              <span className="w-2.5 h-2.5 rounded bg-slate-800 border border-emerald-500 inline-block"></span>
+              <span>Libre</span>
             </div>
-
-            <div className="flex items-center gap-2 text-teal-300 font-medium">
-              <span className="w-4 h-4 rounded-md bg-gradient-to-r from-teal-400 to-emerald-500 inline-block shrink-0 shadow"></span>
-              <span>Tu Elección</span>
+            <div className="flex items-center justify-center gap-1 text-teal-300">
+              <span className="w-2.5 h-2.5 rounded bg-teal-500 inline-block"></span>
+              <span>Elegido</span>
             </div>
-
-            <div className="flex items-center gap-2 text-rose-300 font-medium">
-              <span className="w-4 h-4 rounded-md bg-rose-950 border-2 border-rose-500 inline-block shrink-0 shadow"></span>
+            <div className="flex items-center justify-center gap-1 text-rose-300">
+              <span className="w-2.5 h-2.5 rounded bg-rose-950 border border-rose-500 inline-block"></span>
               <span>Ventanilla</span>
             </div>
-
-            <div className="flex items-center gap-2 text-indigo-300 font-medium">
-              <span className="w-4 h-4 rounded-md bg-indigo-950 border-2 border-indigo-500 inline-block shrink-0 shadow"></span>
-              <span>App Online</span>
+            <div className="flex items-center justify-center gap-1 text-indigo-300">
+              <span className="w-2.5 h-2.5 rounded bg-indigo-950 border border-indigo-500 inline-block"></span>
+              <span>App</span>
             </div>
           </div>
         </div>

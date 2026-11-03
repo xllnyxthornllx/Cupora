@@ -23,42 +23,42 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-5xl mx-auto px-6 py-20 sm:py-28 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-xs font-semibold backdrop-blur-md animate-in fade-in slide-in-from-top-4">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-20 text-center space-y-4 sm:space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-[11px] sm:text-xs font-semibold backdrop-blur-md animate-in fade-in slide-in-from-top-4">
             <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
             <span>Sistema Integral de Reserva y Despacho Interurbano</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-tight">
             Viaja seguro en minivan. <br />
             <span className="bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-300 bg-clip-text text-transparent">
               Cero sobreventa, boleto en mano.
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Diseñado para las rutas de minivanes de Arequipa, Camaná, Mollendo y todo el Perú. 
             Elige tu asiento en el croquis exacto del vehículo, compra online o en ventanilla y valida con código QR sin necesidad de conexión a internet.
           </p>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
               type="button"
               onClick={() => onNavigate('passenger')}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold text-sm transition-all duration-200 shadow-xl shadow-teal-500/30 flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold text-xs sm:text-sm transition-all duration-200 shadow-xl shadow-teal-500/30 flex items-center justify-center gap-2 group active:scale-95"
             >
-              <Smartphone className="w-5 h-5" />
+              <Smartphone className="w-4 h-4" />
               <span>Reservar Pasaje (App Pasajero)</span>
-              <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
             </button>
 
             <button
               type="button"
               onClick={() => onNavigate('driver')}
-              className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-semibold text-sm transition-all duration-200 border border-slate-700/80 hover:border-slate-600 flex items-center justify-center gap-2 shadow-lg"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-semibold text-xs sm:text-sm transition-all duration-200 border border-slate-700/80 hover:border-slate-600 flex items-center justify-center gap-2 shadow-lg active:scale-95"
             >
-              <Bus className="w-5 h-5 text-teal-400" />
+              <Bus className="w-4 h-4 text-teal-400" />
               <span>Modo Chofer (Escanear QR y Ventanilla)</span>
             </button>
           </div>

@@ -4,59 +4,11 @@ import { saveTrips, generateInitialSeats, buildDefaultRenaultFreeform, buildDefa
 import { X, Armchair, DoorOpen, Luggage, Save, RotateCcw, Plus, Trash2, Check, Sparkles, HelpCircle, Edit3, Wand2, MousePointer, Move, AlignJustify, Sliders } from 'lucide-react'
 
 // Visual dimensions specification with mobile-first responsive scaling
-const SCALE_CONFIG = {
-  sm: {
-    containerHeight: 'h-[490px] sm:h-[580px]',
-    seatSize: 'w-[44px] h-[44px] sm:w-12 sm:h-12', // 44px mobile, 48px desktop
-    seatRadius: 'rounded-xl',
-    iconSize: 'w-3 h-3 sm:w-3.5 sm:h-3.5',
-    seatText: 'text-[10px] sm:text-[11px]',
-    driverSize: 'w-[44px] h-[44px] sm:w-12 sm:h-12',
-    driverWheel: 'w-4 h-4 sm:w-5 sm:h-5',
-    doorSliding: 'w-[46px] h-[46px] sm:w-14 sm:h-14',
-    doorCab: 'w-[40px] h-[36px] sm:w-12 sm:h-10',
-    doorRear: 'w-22 h-6 sm:w-26 sm:h-6',
-    luggage: 'w-12 h-7 sm:w-14 sm:h-9'
-  },
-  md: {
-    containerHeight: 'h-[520px] sm:h-[630px]',
-    seatSize: 'w-[48px] h-[48px] sm:w-14 sm:h-14', // 48px mobile, 56px desktop
-    seatRadius: 'rounded-xl sm:rounded-2xl',
-    iconSize: 'w-3.5 h-3.5 sm:w-4 sm:h-4',
-    seatText: 'text-xs font-bold',
-    driverSize: 'w-[48px] h-[48px] sm:w-14 sm:h-14',
-    driverWheel: 'w-5 h-5 sm:w-6 sm:h-6',
-    doorSliding: 'w-[50px] h-[50px] sm:w-16 sm:h-16',
-    doorCab: 'w-[44px] h-[38px] sm:w-13 sm:h-11',
-    doorRear: 'w-24 h-6 sm:w-28 sm:h-7',
-    luggage: 'w-14 h-8 sm:w-16 sm:h-10'
-  },
-  lg: { // Default / Prime Peruvian Minivan (Comfortable & Generous on Phone and PC)
-    containerHeight: 'h-[560px] sm:h-[680px]',
-    seatSize: 'w-[54px] h-[54px] sm:w-[68px] sm:h-[68px]', // 54px mobile, 68px desktop
-    seatRadius: 'rounded-2xl',
-    iconSize: 'w-3.5 h-3.5 sm:w-4.5 sm:h-4.5',
-    seatText: 'text-xs sm:text-sm font-black',
-    driverSize: 'w-[54px] h-[54px] sm:w-[68px] sm:h-[68px]',
-    driverWheel: 'w-5 h-5 sm:w-7 sm:h-7',
-    doorSliding: 'w-[54px] h-[54px] sm:w-18 sm:h-18',
-    doorCab: 'w-[46px] h-[40px] sm:w-14 sm:h-12',
-    doorRear: 'w-28 h-7 sm:w-34 sm:h-8',
-    luggage: 'w-16 h-9 sm:w-20 sm:h-11'
-  },
-  xl: { // Extra Grande / High Accessibility
-    containerHeight: 'h-[600px] sm:h-[750px]',
-    seatSize: 'w-[58px] h-[58px] sm:w-[76px] sm:h-[76px]', // 58px mobile, 76px desktop
-    seatRadius: 'rounded-2xl',
-    iconSize: 'w-4 h-4 sm:w-5 sm:h-5',
-    seatText: 'text-xs sm:text-base font-black',
-    driverSize: 'w-[58px] h-[58px] sm:w-[76px] sm:h-[76px]',
-    driverWheel: 'w-6 h-6 sm:w-8 sm:h-8',
-    doorSliding: 'w-[58px] h-[58px] sm:w-20 sm:h-20',
-    doorCab: 'w-[50px] h-[44px] sm:w-16 sm:h-14',
-    doorRear: 'w-32 h-8 sm:w-38 sm:h-9',
-    luggage: 'w-18 h-10 sm:w-24 sm:h-12'
-  }
+const SCALE_MULTIPLIERS: Record<SeatScale, number> = {
+  sm: 0.9,
+  md: 1.0,
+  lg: 1.12,
+  xl: 1.25
 }
 
 interface MinivanLayoutBuilderModalProps {
@@ -414,7 +366,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
   }
 
   const totalSeatsCount = elements.filter(el => el.type === 'seat').length
-  const currentCfg = SCALE_CONFIG[seatScale]
+  const mult = SCALE_MULTIPLIERS[seatScale] || 1.12
 
   return (
     <dialog
@@ -696,7 +648,7 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
             onMouseUp={handleMouseUp}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            className={`relative w-full ${currentCfg.containerHeight} max-w-[480px] sm:max-w-[530px] mx-auto bg-slate-950 rounded-2xl border-2 border-dashed border-slate-800 overflow-hidden cursor-crosshair select-none transition-all duration-200 touch-none`}
+            className="relative aspect-[380/580] w-full max-w-[390px] sm:max-w-[450px] mx-auto bg-slate-950 rounded-3xl border-4 border-slate-700/80 [container-type:inline-size] overflow-hidden cursor-crosshair select-none transition-all duration-200 touch-none shadow-2xl"
             style={{
               backgroundImage: 'radial-gradient(circle, rgba(56, 189, 248, 0.15) 1.5px, transparent 1.5px)',
               backgroundSize: '24px 24px',
@@ -730,15 +682,20 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
                     onTouchStart={e => handleTouchStart(e, item.id)}
-                    className={`absolute flex flex-col items-center justify-center ${currentCfg.driverSize} rounded-2xl bg-slate-900 border-2 text-slate-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 transition-all ${
+                    className={`absolute flex flex-col items-center justify-center rounded-2xl bg-slate-900 border-2 text-slate-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 transition-all ${
                       isSelected ? 'border-teal-400 ring-2 ring-teal-400' : 'border-slate-600'
                     }`}
-                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                    style={{
+                      left: `${item.x}%`,
+                      top: `${item.y}%`,
+                      width: `${14.5 * mult}cqi`,
+                      height: `${14.5 * mult}cqi`
+                    }}
                   >
-                    <div className={`${currentCfg.driverWheel} rounded-full border border-slate-400 flex items-center justify-center mb-0.5`}>
-                      <div className="w-2 h-2 rounded-full bg-slate-300"></div>
+                    <div className="w-[4.5cqi] h-[4.5cqi] rounded-full border border-slate-400 flex items-center justify-center mb-0.5">
+                      <div className="w-[1.8cqi] h-[1.8cqi] rounded-full bg-slate-300"></div>
                     </div>
-                    <span className="text-[9px] font-black uppercase text-slate-200">Chofer</span>
+                    <span className="text-[2.6cqi] font-black uppercase text-slate-200">Chofer</span>
                   </div>
                 )
               }
@@ -747,6 +704,10 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                 const isSliding = item.doorType === 'sliding'
                 const isCopilot = item.doorType === 'front_right'
                 const isDriverDoor = item.doorType === 'front_left'
+                const isRear = item.doorType === 'rear'
+
+                const doorWidth = isRear ? `${26 * mult}cqi` : isSliding ? `${15 * mult}cqi` : `${12.5 * mult}cqi`
+                const doorHeight = isRear ? `${6 * mult}cqi` : isSliding ? `${15 * mult}cqi` : `${10 * mult}cqi`
 
                 return (
                   <div
@@ -754,15 +715,22 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
                     onTouchStart={e => handleTouchStart(e, item.id)}
-                    className={`absolute flex flex-col items-center justify-center rounded-2xl border-2 text-teal-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 z-10 transition-all ${
+                    className={`absolute flex flex-col items-center justify-center rounded-xl border-2 text-teal-300 shadow-xl cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 z-10 transition-all ${
                       isSliding
-                        ? `${currentCfg.doorSliding} bg-teal-950/85 border-dashed border-teal-400`
-                        : `${currentCfg.doorCab} bg-slate-900 border-teal-500/60`
+                        ? 'bg-teal-950/85 border-dashed border-teal-400'
+                        : isRear
+                        ? 'bg-amber-950/80 border-dashed border-amber-500'
+                        : 'bg-slate-900 border-teal-500/60'
                     } ${isSelected ? 'ring-2 ring-white' : ''}`}
-                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                    style={{
+                      left: `${item.x}%`,
+                      top: `${item.y}%`,
+                      width: doorWidth,
+                      height: doorHeight
+                    }}
                   >
-                    <DoorOpen className={`${currentCfg.iconSize} text-teal-300 mb-0.5`} />
-                    <span className="text-[8px] font-black uppercase text-teal-300 leading-tight">
+                    <DoorOpen className="w-[3.2cqi] h-[3.2cqi] text-teal-300 mb-0.5" />
+                    <span className="text-[2.4cqi] font-black uppercase text-teal-300 leading-tight">
                       {isSliding ? 'Corrediza' : isCopilot ? 'Copiloto' : isDriverDoor ? 'Chofer' : 'Portón'}
                     </span>
                   </div>
@@ -776,12 +744,17 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                     onClick={e => handleElementClick(e, item)}
                     onMouseDown={e => handleMouseDown(e, item.id)}
                     onTouchStart={e => handleTouchStart(e, item.id)}
-                    className={`absolute flex items-center justify-center ${currentCfg.luggage} rounded-xl bg-amber-950/40 border text-amber-300 text-[9px] font-bold gap-1 cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 transition-all ${
+                    className={`absolute flex items-center justify-center rounded-xl bg-amber-950/40 border text-amber-300 text-[2.6cqi] font-bold gap-1 cursor-grab active:cursor-grabbing -translate-x-1/2 -translate-y-1/2 transition-all ${
                       isSelected ? 'border-amber-300 ring-2 ring-amber-400' : 'border-amber-700/60'
                     }`}
-                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                    style={{
+                      left: `${item.x}%`,
+                      top: `${item.y}%`,
+                      width: `${16 * mult}cqi`,
+                      height: `${9 * mult}cqi`
+                    }}
                   >
-                    <Luggage className="w-3.5 h-3.5" />
+                    <Luggage className="w-[3cqi] h-[3cqi]" />
                     <span>Maletero</span>
                   </div>
                 )
@@ -794,16 +767,21 @@ export const MinivanLayoutBuilderModal: React.FC<MinivanLayoutBuilderModalProps>
                   onClick={e => handleElementClick(e, item)}
                   onMouseDown={e => handleMouseDown(e, item.id)}
                   onTouchStart={e => handleTouchStart(e, item.id)}
-                  className={`absolute ${currentCfg.seatSize} ${currentCfg.seatRadius} flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-all -translate-x-1/2 -translate-y-1/2 ${
+                  className={`absolute rounded-xl sm:rounded-2xl flex flex-col items-center justify-center cursor-grab active:cursor-grabbing transition-all -translate-x-1/2 -translate-y-1/2 ${
                     isSelected
                       ? 'bg-gradient-to-br from-teal-400 to-emerald-600 text-white border-2 border-white shadow-xl shadow-teal-500/40 ring-4 ring-teal-300 z-20 scale-105'
                       : 'bg-slate-800 hover:bg-slate-700 text-teal-300 border-2 border-teal-500/80 shadow-md'
                   }`}
-                  style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                  style={{
+                    left: `${item.x}%`,
+                    top: `${item.y}%`,
+                    width: `${14.5 * mult}cqi`,
+                    height: `${14.5 * mult}cqi`
+                  }}
                 >
-                  <div className="flex items-center justify-center gap-0.5 sm:gap-1 leading-none">
-                    <Armchair className={`${currentCfg.iconSize} shrink-0`} />
-                    <span className={`font-mono font-black ${currentCfg.seatText} text-white leading-none`}>
+                  <div className="flex items-center justify-center gap-1 leading-none">
+                    <Armchair className="w-[3.4cqi] h-[3.4cqi] shrink-0" />
+                    <span className="font-mono font-black text-[3.2cqi] text-white leading-none">
                       #{item.seatNumber?.toString().padStart(2, '0') || '01'}
                     </span>
                   </div>

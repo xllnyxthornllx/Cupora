@@ -36,6 +36,7 @@ export const PassengerView: React.FC<PassengerViewProps> = ({
   const [errorMsg, setErrorMsg] = useState<string>('')
   const [activeTabSub, setActiveTabSub] = useState<'booking' | 'my_tickets'>('booking')
   const [userTickets, setUserTickets] = useState<TicketData[]>([])
+  const [showTripConfigMobile, setShowTripConfigMobile] = useState<boolean>(false)
 
   // Available trips for this route (or all if general)
   const routeTrips = trips.filter(t => t.routeId === selectedRouteId)
@@ -311,95 +312,123 @@ export const PassengerView: React.FC<PassengerViewProps> = ({
       ) : (
         /* Booking Flow */
         <div className="space-y-6">
-          {/* Step 1: Destination Selector */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-3">
-            <span className="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span>Paso 1: Selecciona tu Destino</span>
-            </span>
-
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {DEFAULT_ROUTES.map(route => {
-                const isSelected = selectedRouteId === route.id
-                return (
-                  <button
-                    key={route.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedRouteId(route.id)
-                      setSelectedSeat(null)
-                      setErrorMsg('')
-                    }}
-                    className={`p-3.5 rounded-2xl text-left transition-all border ${
-                      isSelected
-                        ? 'bg-teal-950/70 border-teal-500/80 shadow-lg shadow-teal-500/10'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className={`font-bold ${isSelected ? 'text-teal-300' : 'text-slate-300'}`}>
-                        {route.destination.split(' ')[0]}
-                      </span>
-                      <span className="font-mono text-teal-400 font-bold">S/. {route.basePrice.toFixed(2)}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-400 truncate">
-                      Desde: {route.origin.split(' ')[0]}
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      ⏱️ {route.duration} • c/{route.frequencyMinutes}m
-                    </div>
-                  </button>
-                )
-              })}
+          {/* Mobile Quick Route & Car Summary Card (Keeps vehicle seat map front & center without tall scrolling) */}
+          <div className="sm:hidden bg-slate-900/90 border border-teal-500/30 rounded-2xl p-3 shadow-lg flex items-center justify-between">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center shrink-0 text-teal-400 font-bold text-sm">
+                🚐
+              </div>
+              <div className="truncate">
+                <div className="text-xs font-bold text-white flex items-center gap-1.5 truncate">
+                  <span>{currentRoute.destination.split(' ')[0]}</span>
+                  <span className="text-[10px] text-teal-400 font-mono">S/. {currentModel.defaultPrice.toFixed(2)}</span>
+                </div>
+                <div className="text-[10px] text-slate-400 truncate">
+                  {currentModel.name} • {currentTrip?.plate}
+                </div>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowTripConfigMobile(prev => !prev)}
+              className="py-1.5 px-3 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 text-[11px] font-bold border border-teal-500/30 shrink-0 transition-colors"
+            >
+              {showTripConfigMobile ? 'Cerrar ▲' : 'Cambiar Ruta ▼'}
+            </button>
           </div>
 
-          {/* Step 2: Car / Minivan Selection */}
-          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-3">
-            <span className="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span>Paso 2: Elige en qué Minivan deseas viajar</span>
-            </span>
+          {/* Step 1 & Step 2: Hidden on mobile unless expanded */}
+          <div className={`${showTripConfigMobile ? 'block' : 'hidden sm:block'} space-y-6 transition-all`}>
+            {/* Step 1: Destination Selector */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-3">
+              <span className="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Paso 1: Selecciona tu Destino</span>
+              </span>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {availableTrips.map(trip => {
-                const model = models.find(m => m.id === trip.modelId) || models[0]
-                const isSelected = currentTrip.id === trip.id
-                const freeCount = trip.seats.filter(s => s.status === 'available').length
-
-                return (
-                  <button
-                    key={trip.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedTripId(trip.id)
-                      setSelectedSeat(null)
-                    }}
-                    className={`p-4 rounded-2xl text-left border transition-all flex flex-col justify-between ${
-                      isSelected
-                        ? 'bg-teal-950/70 border-teal-500 shadow-md shadow-teal-500/20 ring-1 ring-teal-400'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between w-full mb-2">
-                      <div>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-teal-300 border border-slate-800 font-bold">
-                          {trip.plate}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {DEFAULT_ROUTES.map(route => {
+                  const isSelected = selectedRouteId === route.id
+                  return (
+                    <button
+                      key={route.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedRouteId(route.id)
+                        setSelectedSeat(null)
+                        setErrorMsg('')
+                      }}
+                      className={`p-3.5 rounded-2xl text-left transition-all border ${
+                        isSelected
+                          ? 'bg-teal-950/70 border-teal-500/80 shadow-lg shadow-teal-500/10'
+                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className={`font-bold ${isSelected ? 'text-teal-300' : 'text-slate-300'}`}>
+                          {route.destination.split(' ')[0]}
                         </span>
-                        <h4 className="text-sm font-bold text-white mt-1">{model.name}</h4>
+                        <span className="font-mono text-teal-400 font-bold">S/. {route.basePrice.toFixed(2)}</span>
                       </div>
-                      <span className="text-xs font-bold font-mono text-emerald-400">
-                        Salida: {trip.departureTime}
-                      </span>
-                    </div>
+                      <div className="text-[11px] text-slate-400 truncate">
+                        Desde: {route.origin.split(' ')[0]}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-1">
+                        ⏱️ {route.duration} • c/{route.frequencyMinutes}m
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
-                    <div className="text-xs text-slate-400 pt-2 border-t border-slate-800/80 flex justify-between items-center w-full">
-                      <span>Chofer: {trip.driverName.split(' ')[0]}</span>
-                      <span className={`font-bold ${freeCount > 0 ? 'text-teal-400' : 'text-rose-400'}`}>
-                        {freeCount} Asientos Libres
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
+            {/* Step 2: Car / Minivan Selection */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 space-y-3">
+              <span className="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>Paso 2: Elige en qué Minivan deseas viajar</span>
+              </span>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {availableTrips.map(trip => {
+                  const model = models.find(m => m.id === trip.modelId) || models[0]
+                  const isSelected = currentTrip.id === trip.id
+                  const freeCount = trip.seats.filter(s => s.status === 'available').length
+
+                  return (
+                    <button
+                      key={trip.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedTripId(trip.id)
+                        setSelectedSeat(null)
+                      }}
+                      className={`p-4 rounded-2xl text-left border transition-all flex flex-col justify-between ${
+                        isSelected
+                          ? 'bg-teal-950/70 border-teal-500 shadow-md shadow-teal-500/20 ring-1 ring-teal-400'
+                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between w-full mb-2">
+                        <div>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-teal-300 border border-slate-800 font-bold">
+                            {trip.plate}
+                          </span>
+                          <h4 className="text-sm font-bold text-white mt-1">{model.name}</h4>
+                        </div>
+                        <span className="text-xs font-bold font-mono text-emerald-400">
+                          Salida: {trip.departureTime}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-slate-400 pt-2 border-t border-slate-800/80 flex justify-between items-center w-full">
+                        <span>Chofer: {trip.driverName.split(' ')[0]}</span>
+                        <span className={`font-bold ${freeCount > 0 ? 'text-teal-400' : 'text-rose-400'}`}>
+                          {freeCount} Asientos Libres
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </div>
 
